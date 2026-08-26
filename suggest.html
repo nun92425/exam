@@ -17,7 +17,7 @@
       </a>
       <div class="flex items-center gap-1.5">
         <div id="accountContainer" class="flex items-center gap-1.5"></div>
-        <a href="index.html" class="px-3 py-1.5 rounded-full bg-white text-zinc-900 text-xs font-bold">📋 トップ</a>
+        <a href="index.html" class="px-3 py-1.5 rounded-full bg-white text-zinc-900 text-xs font-bold inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> トップ</a>
       </div>
     </div>
   </header>
@@ -25,14 +25,14 @@
   <main class="max-w-[720px] mx-auto px-3 sm:px-4 py-6">
     <div class="glass rounded-[24px] p-5 sm:p-7">
       <div class="flex items-start gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-400 to-violet-500 grid place-items-center text-white">💡</div>
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-400 to-violet-500 grid place-items-center text-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1.3A7 7 0 0 0 12 2z"/></svg></div>
         <div>
           <h1 class="text-lg font-black">テスト範囲表の修正・追加を提案</h1>
           <p class="text-sm text-zinc-400 mt-1 leading-relaxed">範囲表に誤りや追加したい情報がある場合はこちらから送信してください。管理者が確認後、反映されます。</p>
         </div>
       </div>
 
-      <div id="errorBox" class="hidden mt-4 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300 flex gap-2"><span>⚠️</span><span id="errorMessage"></span></div>
+      <div id="errorBox" class="hidden mt-4 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300 flex gap-2 items-center"><span class="w-4 h-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span id="errorMessage"></span></div>
 
       <form id="suggestForm" novalidate class="mt-6 space-y-4">
         <div>
@@ -40,11 +40,11 @@
           <div class="flex gap-3 mt-2">
             <label class="flex-1 flex items-center gap-2 p-3 rounded-2xl border cursor-pointer has-[:checked]:bg-cyan-500/10 has-[:checked]:border-cyan-400/30 border-white/10 bg-white/[0.03]">
               <input type="radio" name="sugType" value="test_scope" checked class="accent-cyan-400">
-              <span class="text-sm font-semibold">📖 範囲変更</span>
+              <span class="text-sm font-semibold inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8"/><path d="M8 11h8"/></svg> 範囲変更</span>
             </label>
             <label class="flex-1 flex items-center gap-2 p-3 rounded-2xl border cursor-pointer has-[:checked]:bg-violet-500/10 has-[:checked]:border-violet-400/30 border-white/10 bg-white/[0.03]">
               <input type="radio" name="sugType" value="submission" class="accent-violet-400">
-              <span class="text-sm font-semibold">📝 提出物</span>
+              <span class="text-sm font-semibold inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h3"/></svg> 提出物</span>
             </label>
           </div>
         </div>
@@ -95,7 +95,7 @@
       </div>
 
       <div id="successState" class="hidden py-8 text-center">
-        <div class="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/20 grid place-items-center text-2xl mx-auto">✅</div>
+        <div class="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/20 grid place-items-center mx-auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-emerald-400"><path d="M5 13l4 4L19 7"/></svg></div>
         <h3 class="font-black mt-3">提案を送信しました！</h3>
         <p class="text-sm text-zinc-400 mt-1">管理者が確認後、反映されます</p>
         <div class="flex gap-2 justify-center mt-5">

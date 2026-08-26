@@ -1,10 +1,10 @@
-// コース定義（旧GAS版と互換）
+// コース定義（旧GAS版と互換） icon は src/icons.js のキー
 export const COURSES = [
-  { id: 'K/文系', label: 'K / 文系', desc: '基本教科 + 歴史', icon: '📜' },
-  { id: 'K/理系（物理）', label: 'K / 理系 物理', desc: '基本教科 + 地理 + 物理', icon: '⚛️' },
-  { id: 'K/理系（生物）', label: 'K / 理系 生物', desc: '基本教科 + 地理 + 生物', icon: '🧬' },
-  { id: 'SS/理系（物理）', label: 'SS / 理系 物理', desc: '基本教科 + 地理 + 物理', icon: '🚀' },
-  { id: 'SS/理系（生物）', label: 'SS / 理系 生物', desc: '基本教科 + 地理 + 生物', icon: '🌿' },
+  { id: 'K/文系', label: 'K / 文系', desc: '基本教科 + 歴史', icon: 'scroll' },
+  { id: 'K/理系（物理）', label: 'K / 理系 物理', desc: '基本教科 + 地理 + 物理', icon: 'atom' },
+  { id: 'K/理系（生物）', label: 'K / 理系 生物', desc: '基本教科 + 地理 + 生物', icon: 'dna' },
+  { id: 'SS/理系（物理）', label: 'SS / 理系 物理', desc: '基本教科 + 地理 + 物理', icon: 'rocket' },
+  { id: 'SS/理系（生物）', label: 'SS / 理系 生物', desc: '基本教科 + 地理 + 生物', icon: 'leaf' },
 ]
 
 export const BASIC_SUBJECTS = {

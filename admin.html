@@ -12,19 +12,19 @@
   <header class="header-glass">
     <div class="max-w-[1080px] mx-auto px-4 h-[60px] flex items-center justify-between">
       <a href="index.html" class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 grid place-items-center text-white font-black">⚙️</div>
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 grid place-items-center text-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82-.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82L4.2 7.1a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
         <div class="leading-none"><div class="font-extrabold text-[15px]">管理者画面</div><div class="text-[11px] tracking-widest font-semibold text-zinc-400">ADMIN CONSOLE</div></div>
       </a>
       <div class="flex items-center gap-1.5">
         <div id="accountContainer" class="flex items-center gap-1.5"></div>
-        <a href="index.html" class="px-3 py-1.5 rounded-full bg-white text-zinc-900 text-xs font-bold">📋 トップ</a>
+        <a href="index.html" class="px-3 py-1.5 rounded-full bg-white text-zinc-900 text-xs font-bold inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> トップ</a>
       </div>
     </div>
   </header>
 
   <main class="max-w-[1080px] mx-auto px-3 sm:px-4 py-6 space-y-4">
     <div id="adminGate" class="glass rounded-[20px] p-8 text-center">
-      <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/20 grid place-items-center text-xl mx-auto">🔒</div>
+      <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/20 grid place-items-center mx-auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-amber-300"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
       <h2 class="font-black mt-3">管理者権限が必要です</h2>
       <p class="text-sm text-zinc-400 mt-1">ログインし、管理者として承認されているアカウントでアクセスしてください。</p>
       <p class="text-xs text-zinc-500 mt-3">初回は Firebaseコンソール → Firestore → users → あなたのUID の isAdmin を true にしてください。</p>
@@ -38,7 +38,7 @@
     <div id="adminContent" class="hidden space-y-4">
       <!-- Version -->
       <section class="glass rounded-[24px] p-5">
-        <h3 class="font-extrabold flex items-center gap-2">📅 テストバージョン管理</h3>
+        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> テストバージョン管理</h3>
         <div class="flex flex-wrap items-center gap-2 mt-3">
           <span id="currentVersion" class="px-3 py-1.5 rounded-full bg-white/10 border border-white/10 text-sm font-bold">--</span>
           <select id="versionSelect" class="input !w-auto min-w-[200px]"></select>
@@ -49,7 +49,7 @@
 
       <!-- Schedule editor -->
       <section class="glass rounded-[24px] p-5">
-        <h3 class="font-extrabold">🗓 時間割・範囲エディタ</h3>
+        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> 時間割・範囲エディタ</h3>
         <div class="flex flex-wrap gap-2 mt-3">
           <select id="editVersionSelect" class="input !w-auto min-w-[180px]"><option value="">バージョンを選択</option></select>
           <select id="editCourseSelect" class="input !w-auto min-w-[180px]">
@@ -61,8 +61,8 @@
             <option value="SS/理系（生物）">SS/理系（生物）</option>
           </select>
           <button id="loadScheduleBtn" class="btn-ghost">読み込む</button>
-          <button id="addEntryBtn" class="btn-ghost">+ 行を追加</button>
-          <button id="saveScheduleBtn" class="btn-primary ml-auto">💾 保存</button>
+          <button id="addEntryBtn" class="btn-ghost inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M12 5v14M5 12h14"/></svg> 行を追加</button>
+          <button id="saveScheduleBtn" class="btn-primary ml-auto inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg> 保存</button>
         </div>
         <div id="scheduleEditor" class="mt-4 overflow-x-auto rounded-xl border border-white/5">
           <div class="p-6 text-center text-sm text-zinc-500">バージョンとコースを選択して「読み込む」を押してください</div>
@@ -71,7 +71,7 @@
 
       <!-- Submissions editor -->
       <section class="glass rounded-[24px] p-5">
-        <h3 class="font-extrabold">📝 提出物エディタ</h3>
+        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h3"/></svg> 提出物エディタ</h3>
         <div class="flex flex-wrap gap-2 mt-3">
           <select id="subVersionSelect" class="input !w-auto min-w-[180px]"><option value="">バージョン</option></select>
           <select id="subCourseSelect" class="input !w-auto min-w-[180px]">
@@ -82,8 +82,8 @@
             <option value="SS/理系（生物）">SS/理系（生物）</option>
           </select>
           <button id="loadSubBtn" class="btn-ghost">読み込む</button>
-          <button id="addSubEntryBtn" class="btn-ghost">+ 行を追加</button>
-          <button id="saveSubBtn" class="btn-primary ml-auto">💾 保存</button>
+          <button id="addSubEntryBtn" class="btn-ghost inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M12 5v14M5 12h14"/></svg> 行を追加</button>
+          <button id="saveSubBtn" class="btn-primary ml-auto inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg> 保存</button>
         </div>
         <div id="submissionEditor" class="mt-4 overflow-x-auto rounded-xl border border-white/5">
           <div class="p-6 text-center text-sm text-zinc-500">「読み込み」でデータを取得してください</div>
@@ -92,11 +92,11 @@
 
       <!-- Suggestions -->
       <section class="glass rounded-[24px] p-5">
-        <h3 class="font-extrabold">💡 提案一覧</h3>
+        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1.3A7 7 0 0 0 12 2z"/></svg> 提案一覧</h3>
         <div class="flex gap-1.5 mt-3">
           <button class="tab-btn active px-3 py-1.5 rounded-full text-xs font-bold bg-white text-zinc-900" data-filter="all">すべて</button>
-          <button class="tab-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10" data-filter="test_scope">📖 範囲変更</button>
-          <button class="tab-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10" data-filter="submission">📝 提出物</button>
+          <button class="tab-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10 inline-flex items-center gap-1" data-filter="test_scope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8"/><path d="M8 11h8"/></svg> 範囲変更</button>
+          <button class="tab-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10 inline-flex items-center gap-1" data-filter="submission"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> 提出物</button>
         </div>
         <div id="suggestionList" class="mt-4 space-y-3"></div>
         <div id="sugLoading" class="py-6 grid place-items-center gap-2">

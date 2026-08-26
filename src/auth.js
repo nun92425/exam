@@ -71,7 +71,7 @@ function updateAuthUI(user){
             ${isAdmin ? '<div class="mt-1 inline-flex px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-[10px] font-bold tracking-wide text-violet-300">ADMIN</div>' : ''}
           </div>
           <div class="h-px bg-white/10 my-1"></div>
-          ${isAdmin ? '<a href="admin.html" class="block w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-white/10">⚙️ 管理者画面</a>' : ''}
+          ${isAdmin ? '<a href="admin.html" class="block w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-white/10"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"/></svg> 管理者画面</a>' : ''}
           <button id="logoutBtn" class="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-white/10 text-red-300">ログアウト</button>
         </div>
       </div>`

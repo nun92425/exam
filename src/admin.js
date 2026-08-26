@@ -220,7 +220,7 @@ async function loadSuggestions(){
 function renderSuggestions(){
   const list=$('#suggestionList'); list.innerHTML=''
   const filtered = state.filter==='all' ? state.suggestions : state.suggestions.filter(s=> s.type===state.filter)
-  if(filtered.length===0){ list.innerHTML='<div class="text-center py-8 text-zinc-500"><div class="text-2xl">📭</div><p class="text-sm mt-2">提案はありません</p></div>'; return }
+  if(filtered.length===0){ list.innerHTML='<div class="text-center py-8 text-zinc-500"><div class="text-2xl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 inline"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8"/><rect x="3" y="8" width="18" height="10" rx="2"/></svg></div><p class="text-sm mt-2">提案はありません</p></div>'; return }
   const pending=filtered.filter(s=> s.status==='承認待ち'), done=filtered.filter(s=> s.status!=='承認待ち')
   const mk=(arr, title)=>{
     if(arr.length===0) return
@@ -240,7 +240,7 @@ function createSuggestionEl(s){
     <div class="flex items-start justify-between gap-2">
       <div class="flex flex-wrap items-center gap-2">
         <span class="font-bold text-sm">${escHtml(s.subject)}</span>
-        <span class="text-[11px] px-2 py-0.5 rounded-full border ${isScope?'bg-cyan-500/15 border-cyan-500/20 text-cyan-200':'bg-violet-500/15 border-violet-500/20 text-violet-200'}">${isScope?'📖 範囲':'📝 提出物'}</span>
+        <span class="text-[11px] px-2 py-0.5 rounded-full border ${isScope?'bg-cyan-500/15 border-cyan-500/20 text-cyan-200':'bg-violet-500/15 border-violet-500/20 text-violet-200'}">${isScope?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2z"/></svg> 範囲':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> 提出物'}</span>
         <span class="text-xs text-zinc-400">${escHtml(s.course||'')}</span>
       </div>
       <span class="text-[11px] font-bold px-2 py-1 rounded-full border ${statusClass}">${escHtml(s.status||'承認待ち')}</span>

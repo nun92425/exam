@@ -10,9 +10,10 @@ let state = {
   filterSubject: '',
   todayOnly: false,
   sortBy: 'date',
-  viewMode: localStorage.getItem('exam_view_mode') || 'table', // table | card
+  viewMode: localStorage.getItem('exam_view_mode') || 'table', // table | card | calendar | timeline
   density: localStorage.getItem('exam_density') || 'comfortable', // comfortable | compact
   subFilter: 'all', // all | todo | done
+  calendarDate: null, // Date for calendar view month
 }
 
 const CIRCUMFERENCE = 2 * Math.PI * 78
@@ -179,58 +180,57 @@ function renderSubjectChips(){
 function renderSchedule(){
   const rows=filteredSchedules()
   updateScheduleCount()
-  const tbody=$('#scheduleBody'), empty=$('#emptyState'), cards=$('#scheduleCards'), tableWrap=$('#scheduleTable')?.parentElement
-  const isCard = state.viewMode==='card'
-  // view toggle UI
-  $('#viewTableBtn')?.classList.toggle('bg-white', !isCard)
-  $('#viewTableBtn')?.classList.toggle('text-zinc-900', !isCard)
-  $('#viewTableBtn')?.classList.toggle('bg-white/10', isCard)
-  $('#viewCardBtn')?.classList.toggle('bg-white', isCard)
-  $('#viewCardBtn')?.classList.toggle('text-zinc-900', isCard)
-  $('#viewCardBtn')?.classList.toggle('bg-white/10', !isCard)
-  // density button label
+  const tbody=$('#scheduleBody'), empty=$('#emptyState'), cards=$('#scheduleCards'), cal=$('#scheduleCalendar'), tl=$('#scheduleTimeline'), tableWrap=$('#scheduleTable')?.parentElement
+  const mode=state.viewMode
+  // update view toggle UI
+  for(const [id, m] of [['viewTableBtn','table'],['viewCardBtn','card'],['viewCalendarBtn','calendar'],['viewTimelineBtn','timeline']]){
+    const btn=document.getElementById(id)
+    if(!btn) continue
+    const active=mode===m
+    btn.className = active ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-white text-zinc-900 inline-flex items-center gap-1' : 'px-2.5 py-1 rounded-full text-xs font-bold bg-transparent text-zinc-400 hover:text-white inline-flex items-center gap-1'
+  }
   const dBtn=$('#densityBtn')
-  if(dBtn) dBtn.textContent = state.density==='compact' ? '↕ コンパクト' : '↕ ゆったり'
-  // density class
+  if(dBtn) dBtn.innerHTML = state.density==='compact' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><path d="M12 3v14"/><path d="M8 10l4-4 4 4"/><path d="M8 14l-4 4 4 4"/></svg> コンパクト' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><path d="M12 3v14"/><path d="M8 10l4-4 4 4"/><path d="M8 14l-4 4 4 4"/></svg> ゆったり'
   document.documentElement.setAttribute('data-density', state.density)
 
-  if(isCard){
-    if(tableWrap) tableWrap.classList.add('hidden')
-    cards.classList.remove('hidden')
-  } else {
-    if(tableWrap) tableWrap.classList.remove('hidden')
-    cards.classList.add('hidden')
-  }
+  // hide all containers first
+  if(tableWrap) tableWrap.classList.add('hidden')
+  cards.classList.add('hidden')
+  cal.classList.add('hidden')
+  tl.classList.add('hidden')
 
-  // render table
+  if(mode==='table' && tableWrap) tableWrap.classList.remove('hidden')
+  else if(mode==='card') cards.classList.remove('hidden')
+  else if(mode==='calendar') cal.classList.remove('hidden')
+  else if(mode==='timeline') tl.classList.remove('hidden')
+
+  // render table/cards only when needed, but always prepare data for calendar/timeline if they are active
   tbody.innerHTML=''
   cards.innerHTML=''
+  cal.innerHTML=''
+  tl.innerHTML=''
+
   if(rows.length===0){
     show(empty)
-    if(isCard) cards.classList.add('hidden')
     return
   }
   hide(empty)
 
-  let lastDate=''
-  rows.forEach((row, idx)=>{
-    const globalIdx=state.schedule.indexOf(row)
-    const color=row.color || SUBJECT_COLORS[row.subject] || '#3B82F6'
-    const date=row.date||''
-    const badge=getDateBadge(date)
-    const memoKey=getMemoKey(row, globalIdx)
-    const memoVal=localStorage.getItem(memoKey)||''
-    const hasMemo=!!memoVal
-
-    // table row
-    if(!isCard){
+  // Table rendering
+  if(mode==='table'){
+    let lastDate=''
+    rows.forEach((row, idx)=>{
+      const globalIdx=state.schedule.indexOf(row)
+      const color=row.color || SUBJECT_COLORS[row.subject] || '#3B82F6'
+      const date=row.date||''
+      const badge=getDateBadge(date)
+      const memoKey=getMemoKey(row, globalIdx)
+      const memoVal=localStorage.getItem(memoKey)||''
+      const hasMemo=!!memoVal
       if(date && date!==lastDate){
         lastDate=date
         const tr=document.createElement('tr')
-        tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300 flex items-center gap-2">📅 ${escHtml(date)} ${badge?`<span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
-        // colspan td is inside tr, but we used flex; fix: wrap
-        // redo correctly
-        tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300">📅 ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
+        tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
         tbody.appendChild(tr)
       }
       const tr=document.createElement('tr')
@@ -240,44 +240,195 @@ function renderSchedule(){
         <td class="font-mono text-xs whitespace-nowrap"><span class="inline-flex items-center gap-1.5">${escHtml(date)} ${badge&&date===lastDate?'': badge?`<span class="px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</span></td>
         <td class="text-center"><span class="inline-flex px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold">${escHtml(row.period||'')}</span></td>
         <td class="text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${escHtml(row.scope||'').replace(/\n/g,'<br>')}</td>
-        <td class="text-zinc-400 text-xs leading-relaxed"><div>${escHtml(row.notes||'').replace(/\n/g,'<br>')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}<button data-memo="${globalIdx}" class="mt-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">${hasMemo?'メモ編集':'＋メモ'}</button></td>`
+        <td class="text-zinc-400 text-xs leading-relaxed"><div>${escHtml(row.notes||'').replace(/\n/g,'<br>')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${escHtml(memoVal)}</div>`:''}<button data-memo="${globalIdx}" class="mt-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">${hasMemo?'メモ編集':'＋メモ'}</button></td>`
       tbody.appendChild(tr)
-      // memo expand row
-      const memoBtn=tr.querySelector(`[data-memo="${globalIdx}"]`)
-      memoBtn?.addEventListener('click', ()=>{
+      tr.querySelector(`[data-memo="${globalIdx}"]`)?.addEventListener('click', ()=>{
         const cur=localStorage.getItem(memoKey)||''
         const nv=prompt('個人メモ（自分だけに表示、端末に保存）', cur)
         if(nv===null) return
         if(nv) localStorage.setItem(memoKey, nv); else localStorage.removeItem(memoKey)
         renderSchedule()
       })
-    }
-
-    // card
-    const card=document.createElement('div')
-    card.className='p-3 rounded-2xl glass-subtle card-hover flex flex-col gap-2 ' + (state.density==='compact'?'!p-2.5':'')
-    card.innerHTML=`
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span><span class="font-bold text-sm">${escHtml(row.subject)}</span></div>
-        <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10">${escHtml(date)} ${escHtml(row.period||'')}</span>
-      </div>
-      ${badge?`<div class="inline-flex self-start px-2 py-0.5 rounded-full text-[11px] font-black border ${badge.cls}">${badge.label} • ${escHtml(date)}</div>`:''}
-      <div class="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed bg-white/[0.03] border border-white/5 rounded-xl p-2.5">${escHtml(row.scope||'（範囲なし）').replace(/\n/g,'<br>')}</div>
-      ${row.notes?`<div class="text-xs text-zinc-400">${escHtml(row.notes).replace(/\n/g,'<br>')}</div>`:''}
-      ${hasMemo?`<div class="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}
-      <button data-memo-card="${globalIdx}" class="self-start text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">📝 ${hasMemo?'メモ編集':'メモ追加'}</button>
-    `
-    card.querySelector(`[data-memo-card="${globalIdx}"]`)?.addEventListener('click', ()=>{
-      const cur=localStorage.getItem(memoKey)||''
-      const nv=prompt('個人メモ', cur)
-      if(nv===null) return
-      if(nv) localStorage.setItem(memoKey, nv); else localStorage.removeItem(memoKey)
-      renderSchedule()
     })
-    cards.appendChild(card)
-  })
+  }
+
+  // Card rendering (also for card mode)
+  if(mode==='card'){
+    rows.forEach((row)=>{
+      const globalIdx=state.schedule.indexOf(row)
+      const color=row.color || SUBJECT_COLORS[row.subject] || '#3B82F6'
+      const date=row.date||''
+      const badge=getDateBadge(date)
+      const memoKey=getMemoKey(row, globalIdx)
+      const memoVal=localStorage.getItem(memoKey)||''
+      const hasMemo=!!memoVal
+      const card=document.createElement('div')
+      card.className='p-3 rounded-2xl glass-subtle card-hover flex flex-col gap-2 ' + (state.density==='compact'?'!p-2.5':'')
+      card.innerHTML=`
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span><span class="font-bold text-sm">${escHtml(row.subject)}</span></div>
+          <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10">${escHtml(date)} ${escHtml(row.period||'')}</span>
+        </div>
+        ${badge?`<div class="inline-flex self-start px-2 py-0.5 rounded-full text-[11px] font-black border ${badge.cls}">${badge.label} • ${escHtml(date)}</div>`:''}
+        <div class="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed bg-white/[0.03] border border-white/5 rounded-xl p-2.5">${escHtml(row.scope||'（範囲なし）').replace(/\n/g,'<br>')}</div>
+        ${row.notes?`<div class="text-xs text-zinc-400">${escHtml(row.notes).replace(/\n/g,'<br>')}</div>`:''}
+        ${hasMemo?`<div class="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${escHtml(memoVal)}</div>`:''}
+        <button data-memo-card="${globalIdx}" class="self-start text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">メモ ${hasMemo?'編集':'追加'}</button>
+      `
+      card.querySelector(`[data-memo-card="${globalIdx}"]`)?.addEventListener('click', ()=>{
+        const cur=localStorage.getItem(memoKey)||''
+        const nv=prompt('個人メモ', cur)
+        if(nv===null) return
+        if(nv) localStorage.setItem(memoKey, nv); else localStorage.removeItem(memoKey)
+        renderSchedule()
+      })
+      cards.appendChild(card)
+    })
+  }
+
+  // Calendar & Timeline are rendered via dedicated functions
+  if(mode==='calendar') renderCalendar(rows)
+  if(mode==='timeline') renderTimeline(rows)
 }
 
+function renderCalendar(rows){
+  const cal=$('#scheduleCalendar')
+  if(!cal) return
+  // Determine month to display
+  if(!state.calendarDate){
+    // try first upcoming date, else today
+    const first=rows.find(r=> parseScheduleDate(r.date))
+    const d=first? parseScheduleDate(first.date) : new Date()
+    state.calendarDate=new Date(d.getFullYear(), d.getMonth(), 1)
+  }
+  const year=state.calendarDate.getFullYear(), month=state.calendarDate.getMonth()
+  const firstDay=new Date(year, month, 1)
+  const lastDay=new Date(year, month+1, 0)
+  const startWeek=firstDay.getDay() // 0 Sun
+  // group rows by date (parsed)
+  const byDate=new Map()
+  for(const r of rows){
+    const d=parseScheduleDate(r.date)
+    if(!d) continue
+    const key=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    if(!byDate.has(key)) byDate.set(key, [])
+    byDate.get(key).push(r)
+  }
+  const monthName=`${year}年 ${month+1}月`
+  let html=`<div class="flex items-center justify-between mb-3">
+    <button id="calPrev" class="w-8 h-8 grid place-items-center rounded-full bg-white/10 border border-white/10 hover:bg-white/15"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="w-4 h-4"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="font-black text-sm">${monthName}</div>
+    <button id="calNext" class="w-8 h-8 grid place-items-center rounded-full bg-white/10 border border-white/10 hover:bg-white/15"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="w-4 h-4"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>`
+  html+=`<div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold tracking-widest text-zinc-500 mb-1"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>`
+  html+=`<div class="grid grid-cols-7 gap-1.5">`
+  // empty cells before first
+  for(let i=0;i<startWeek;i++) html+=`<div class="h-[88px] rounded-xl bg-white/[0.02] border border-white/5"></div>`
+  for(let day=1; day<=lastDay.getDate(); day++){
+    const cur=new Date(year, month, day)
+    const key=`${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`
+    const items=byDate.get(key)||[]
+    const isToday=new Date().toDateString()===cur.toDateString()
+    html+=`<div class="min-h-[88px] rounded-xl border ${isToday?'border-cyan-400/40 bg-cyan-500/10':'bg-white/[0.03] border-white/5'} p-1.5 flex flex-col gap-1">
+      <div class="text-xs font-mono font-bold ${isToday?'text-cyan-300':'text-zinc-400'}">${day}</div>
+      <div class="flex flex-col gap-1">`
+    for(const r of items.slice(0,3)){
+      const color=r.color||SUBJECT_COLORS[r.subject]||'#3B82F6'
+      html+=`<div class="text-[11px] px-1.5 py-0.5 rounded-full text-white font-semibold truncate" style="background:${color}">${escHtml(r.subject)} ${escHtml(r.period||'')}</div>`
+    }
+    if(items.length>3) html+=`<div class="text-[11px] text-zinc-500 text-center">+${items.length-3}件</div>`
+    html+=`</div></div>`
+  }
+  html+=`</div>`
+  if(rows.some(r=> !parseScheduleDate(r.date))){
+    const noDate=rows.filter(r=> !parseScheduleDate(r.date))
+    html+=`<div class="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/5"><div class="text-xs font-bold text-zinc-400 mb-1">日程未定</div><div class="flex flex-wrap gap-1.5">${noDate.map(r=>`<span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-xs">${escHtml(r.subject)}</span>`).join('')}</div></div>`
+  }
+  cal.innerHTML=html
+  cal.querySelector('#calPrev')?.addEventListener('click', ()=>{ state.calendarDate=new Date(year, month-1,1); renderCalendar(rows) })
+  cal.querySelector('#calNext')?.addEventListener('click', ()=>{ state.calendarDate=new Date(year, month+1,1); renderCalendar(rows) })
+}
+
+function renderTimeline(rows){
+  const tl=$('#scheduleTimeline')
+  if(!tl) return
+  // group by date
+  const groups=new Map()
+  for(const r of rows){
+    const key=r.date||'未定'
+    if(!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(r)
+  }
+  let html=`<div class="relative pl-6 border-l border-white/10">`
+  for(const [date, items] of groups){
+    const badge=getDateBadge(date)
+    html+=`<div class="relative mb-6">
+      <div class="absolute -left-[7px] top-1 w-3 h-3 rounded-full ${badge? (badge.cls.includes('red')?'bg-red-500': badge.cls.includes('orange')?'bg-orange-500':'bg-cyan-400') : 'bg-white/20'} border-2 border-[#0F162E]"></div>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-sm font-black">${escHtml(date)}</span>
+        ${badge?`<span class="px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}
+      </div>
+      <div class="grid gap-2">`
+    for(const r of items){
+      const color=r.color||SUBJECT_COLORS[r.subject]||'#3B82F6'
+      const globalIdx=state.schedule.indexOf(r)
+      const memoKey=getMemoKey(r, globalIdx)
+      const hasMemo=!!localStorage.getItem(memoKey)
+      html+=`<div class="p-3 rounded-2xl glass-subtle flex flex-col gap-1.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${color}"></span><span class="font-bold text-sm">${escHtml(r.subject)}</span><span class="text-xs px-1.5 py-0.5 rounded-full bg-white/10 border border-white/10">${escHtml(r.period||'')}</span></div>
+          ${hasMemo?'<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>':''}
+        </div>
+        <div class="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed">${escHtml(r.scope||'').replace(/\n/g,'<br>')}</div>
+        ${r.notes?`<div class="text-xs text-zinc-500">${escHtml(r.notes).replace(/\n/g,'<br>')}</div>`:''}
+      </div>`
+    }
+    html+=`</div></div>`
+  }
+  html+=`</div>`
+  tl.innerHTML=html
+}
+
+function checkUpcoming(forceToast=false){
+  if(!('Notification' in window)) return
+  if(Notification.permission!=='granted' && !forceToast) return
+  const rows=filteredSchedules()
+  const today=new Date(); today.setHours(0,0,0,0)
+  for(const r of rows){
+    const d=parseScheduleDate(r.date)
+    if(!d) continue
+    const diff=Math.ceil((d - today)/(1000*60*60*24))
+    if(diff===1 || diff===0){
+      const key=`exam_notified_${r.subject}_${r.date}_${diff}`
+      if(localStorage.getItem(key)) continue
+      const title= diff===0 ? `今日は ${r.subject} テスト` : `明日は ${r.subject} テスト`
+      const body=`${r.date} ${r.period||''} ${r.scope? r.scope.slice(0,40):''}`
+      if(Notification.permission==='granted'){
+        try{ new Notification(title, { body }) }catch{}
+      }
+      if(forceToast) toast(title)
+      localStorage.setItem(key, 'true')
+    }
+  }
+  // also check submissions progress when test is near
+  const earliest=rows.map(r=> parseScheduleDate(r.date)).filter(Boolean).sort((a,b)=>a-b)[0]
+  if(earliest){
+    const diff=Math.ceil((earliest - today)/(1000*60*60*24))
+    if(diff<=3 && diff>=0){
+      const done=state.submissions.filter((r,i)=> localStorage.getItem(getProgressKey(state.config?.version, state.course, r.subject, r.notes, i))==='true').length
+      const total=state.submissions.length
+      if(total && done < total){
+        const key=`exam_notified_sub_${diff}_${state.config?.version}`
+        if(!localStorage.getItem(key)){
+          const msg=`テストまであと${diff}日 — 提出物 ${done}/${total} 未完了あり`
+          if(Notification.permission==='granted') try{ new Notification('提出物リマインダー', { body: msg }) }catch{}
+          if(forceToast) toast(msg)
+          localStorage.setItem(key,'true')
+        }
+      }
+    }
+  }
+}
 function renderSubmissions(){
   const tbody=$('#submissionBody'), empty=$('#subEmptyState')
   tbody.innerHTML=''
@@ -431,12 +582,12 @@ function pauseTimer(){
 }
 function resetTimer(){
   pauseTimer(); timer.mode='focus'; timer.left=FOCUS_SEC
-  updateTimerDisplay(); updateTimerRing()
+  updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000)
   $('#timerModeLabel').textContent='📚 集中'
 }
 function tick(){
   timer.left--
-  updateTimerDisplay(); updateTimerRing()
+  updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000)
   if(timer.left<=0){
     if(timer.mode==='focus'){
       saveStudyTime(timer.subject, FOCUS_SEC); updateTimerStats()
@@ -446,7 +597,7 @@ function tick(){
       timer.mode='focus'; timer.left=FOCUS_SEC; $('#timerModeLabel').textContent='📚 集中'; toast('休憩終了！集中しましょう')
       try{ new Notification('休憩終了', { body: '集中再開！' }) }catch{}
     }
-    updateTimerDisplay(); updateTimerRing(); pauseTimer()
+    updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000); pauseTimer()
   }
 }
 function updateTimerDisplay(){
@@ -540,12 +691,19 @@ function initDark(){
   $('#darkModeBtn')?.addEventListener('click', ()=> toast('ダーククールテーマで固定表示しています'))
 }
 
+function setViewMode(mode){
+  state.viewMode=mode
+  localStorage.setItem('exam_view_mode', mode)
+  renderSchedule()
+}
 function initFilters(){
-  const search=$('#searchInput'), sort=$('#sortSelect'), viewT=$('#viewTableBtn'), viewC=$('#viewCardBtn'), dens=$('#densityBtn'), todayBtn=$('#todayFilterBtn')
+  const search=$('#searchInput'), sort=$('#sortSelect'), viewT=$('#viewTableBtn'), viewC=$('#viewCardBtn'), viewCal=$('#viewCalendarBtn'), viewTl=$('#viewTimelineBtn'), dens=$('#densityBtn'), todayBtn=$('#todayFilterBtn'), notifyBtn=$('#notifyBtn')
   search?.addEventListener('input', e=>{ state.filterQuery=e.target.value.trim(); renderSchedule() })
   sort?.addEventListener('change', e=>{ state.sortBy=e.target.value; renderSchedule() })
-  viewT?.addEventListener('click', ()=>{ state.viewMode='table'; localStorage.setItem('exam_view_mode','table'); renderSchedule() })
-  viewC?.addEventListener('click', ()=>{ state.viewMode='card'; localStorage.setItem('exam_view_mode','card'); renderSchedule() })
+  viewT?.addEventListener('click', ()=> setViewMode('table'))
+  viewC?.addEventListener('click', ()=> setViewMode('card'))
+  viewCal?.addEventListener('click', ()=> setViewMode('calendar'))
+  viewTl?.addEventListener('click', ()=> setViewMode('timeline'))
   dens?.addEventListener('click', ()=>{
     state.density = state.density==='compact' ? 'comfortable' : 'compact'
     localStorage.setItem('exam_density', state.density)
@@ -608,7 +766,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   initCourse()
   await authReady
   updateMenuCourseLabel()
-  updateTimerDisplay(); updateTimerRing()
+  updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000)
   // request notification permission lazily
   if('Notification' in window && Notification.permission==='default'){
     $('#timerToggleBtn')?.addEventListener('click', ()=> Notification.requestPermission().catch(()=>{}), { once:true })
