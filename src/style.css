@@ -194,11 +194,11 @@ html:not(.dark) .timer-ring-bg { stroke: rgba(0,0,0,0.08); }
 .schedule-table { @apply w-full text-sm; border-collapse: collapse; table-layout: fixed; }
 .schedule-table th {
   @apply text-[11px] font-bold tracking-widest uppercase px-3 py-2.5 text-left;
-  @apply bg-zinc-50 border-b border-zinc-200 text-zinc-500;
-  position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
+  @apply bg-zinc-50 border-b border-zinc-200 text-zinc-600;
+  /* removed sticky to fix top-bar drop; header now scrolls naturally */
 }
 html.dark .schedule-table th {
-  @apply bg-white/[0.03] border-white/[0.06] text-zinc-400;
+  @apply bg-[#0F162E] border-white/[0.06] text-zinc-400;
 }
 .schedule-table td { @apply px-3 py-3 border-b border-zinc-200 align-middle; }
 html.dark .schedule-table td { @apply border-white/[0.04]; }
@@ -207,8 +207,11 @@ html.dark .schedule-table tbody tr { @apply hover:bg-white/[0.03]; }
 .schedule-table tbody tr.row-completed { @apply opacity-50; }
 .schedule-table tbody tr.row-completed td { @apply line-through decoration-zinc-400; }
 html.dark .schedule-table tbody tr.row-completed td { @apply decoration-white/20; }
-.schedule-table .date-group-header td { @apply border-b bg-zinc-100 text-zinc-600; }
+.schedule-table .date-group-header td { @apply border-b bg-zinc-100 text-zinc-700 font-bold; }
 html.dark .schedule-table .date-group-header td { @apply border-white/[0.06] bg-white/[0.04] text-zinc-300; }
+#filterBar {
+  position: sticky; top: 60px; z-index: 20; backdrop-filter: blur(12px);
+}
 
 /* ===== Progress ===== */
 .progress-track { @apply h-2 rounded-full overflow-hidden; }

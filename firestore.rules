@@ -47,6 +47,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // coachChats: 本人のみ（AIコーチ履歴）
+    match /coachChats/{userId}/{document=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
     // user progress / timer logs は users サブコレクションでも可だが今回はローカル+usersドキュメントに保存するため不要
   }
 }

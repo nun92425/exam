@@ -4,6 +4,7 @@ import { $, show, hide, toast, escHtml, escAttr, parseScheduleDate, escapeICS, f
 import { initAuth, bindAuthModals, getIsAdmin, authReady } from './auth.js'
 import { getConfig, getSchedules, getSubmissions } from './firestore.js'
 import { initTheme, toggleTheme } from './theme.js'
+import { initCoach } from './coach.js'
 
 let state = {
   course: null, config: null, schedule: [], submissions: [], subjects: [],
@@ -81,6 +82,7 @@ async function loadData(){
     state.submissions=submissions
     renderInfo(); renderSubjectChips(); renderSchedule(); renderSubmissions(); renderCountdown(); updateProgressUI(); updateLastUpdated(); updateTimerSubjects()
     updateScheduleCount()
+    try{ window._coachUpdateContext?.() }catch{}
   } catch(e){
     show(errorBox); $('#errorMessage').textContent='データの読み込みに失敗しました: '+ (e.message||e)
   } finally { hide(loading) }
@@ -925,6 +927,56 @@ function initPlanAndShare(){
   })
 }
 
+function initBottomNav(){
+  const nav=document.getElementById('bottomNav')
+  if(!nav) return
+  if(window.innerWidth<640 && !localStorage.getItem('exam_view_mode')){
+    state.viewMode='card'
+    localStorage.setItem('exam_view_mode','card')
+  }
+  nav.querySelectorAll('[data-nav]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const v=btn.dataset.nav
+      nav.querySelectorAll('[data-nav]').forEach(b=>{
+        b.classList.remove('text-cyan-600','font-bold')
+        b.classList.add('text-zinc-500','font-medium')
+      })
+      btn.classList.add('text-cyan-600','font-bold')
+      btn.classList.remove('text-zinc-500','font-medium')
+      if(v==='top') window.scrollTo({top:0, behavior:'smooth'})
+      else if(v==='schedule') document.getElementById('scheduleCard')?.scrollIntoView({behavior:'smooth'})
+      else if(v==='submission') document.getElementById('submissionCard')?.scrollIntoView({behavior:'smooth'})
+      else if(v==='timer') openTimerModal()
+      else if(v==='plan') openPlanModal()
+      else if(v==='coach') document.getElementById('coachBtn')?.click()
+    })
+  })
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const id=e.target.id
+        let k=null
+        if(id==='topSection') k='top'
+        else if(id==='scheduleCard') k='schedule'
+        else if(id==='submissionCard') k='submission'
+        if(k){
+          nav.querySelectorAll('[data-nav]').forEach(b=>{
+            const a=b.dataset.nav===k
+            b.classList.toggle('text-cyan-600',a)
+            b.classList.toggle('font-bold',a)
+            b.classList.toggle('text-zinc-500',!a)
+            b.classList.toggle('font-medium',!a)
+          })
+        }
+      }
+    })
+  },{threshold:0.3})
+  ;['topSection','scheduleCard','submissionCard'].forEach(id=>{
+    const el=document.getElementById(id)
+    if(el) obs.observe(el)
+  })
+}
+
 // ---------- Menu ----------
 function initMenu(){
   const btn=$('#menuBtn'), overlay=$('#menuOverlay'), dropdown=$('#menuDropdown')
@@ -1001,7 +1053,7 @@ function initFilters(){
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
   initTheme(); initAuth(); bindAuthModals()
-  initMenu(); initFilters(); initPlanAndShare()
+  initMenu(); initBottomNav(); initFilters(); initPlanAndShare(); initCoach(()=>state)
   $('#printBtn')?.addEventListener('click', ()=> window.print())
   $('#calendarExportBtn')?.addEventListener('click', exportCalendar)
   $('#resetProgressBtn')?.addEventListener('click', resetProgress)
