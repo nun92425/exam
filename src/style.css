@@ -5,15 +5,26 @@
 /* ===== Base ===== */
 * { -webkit-font-smoothing: antialiased; }
 html { scroll-behavior: smooth; }
+/* Light is default (as requested) */
 body {
   font-family: 'Inter','Noto Sans JP',system-ui,sans-serif;
-  @apply bg-[#070A14] text-zinc-100 antialiased;
+  @apply bg-[#f8fafc] text-zinc-800 antialiased;
   overflow-x: hidden;
+}
+html.dark body {
+  @apply bg-[#070A14] text-zinc-100;
 }
 
 /* ===== Background ===== */
 .bg-mesh {
   position: fixed; inset: 0; z-index: -1;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,0.10), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, rgba(6,182,214,0.10), transparent 60%),
+    radial-gradient(800px 600px at 50% 100%, rgba(236,72,153,0.05), transparent 60%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 40%, #e2e8f0 100%);
+}
+html.dark .bg-mesh {
   background:
     radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,0.22), transparent 60%),
     radial-gradient(900px 500px at 90% 0%, rgba(6,182,214,0.18), transparent 60%),
@@ -21,25 +32,42 @@ body {
     linear-gradient(180deg, #070A14 0%, #0B1022 40%, #0F162E 100%);
 }
 .bg-grid {
-  position: fixed; inset: 0; z-index: -1; opacity: 0.05;
+  position: fixed; inset: 0; z-index: -1; opacity: 0.04;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask: radial-gradient(ellipse at center, black 40%, transparent 75%);
+}
+html.dark .bg-grid {
+  opacity: 0.05;
   background-image:
     linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask: radial-gradient(ellipse at center, black 40%, transparent 75%);
 }
 
 /* ===== Glass ===== */
 .glass {
-  @apply bg-white/[0.06] backdrop-blur-xl border border-white/[0.08];
+  @apply bg-white/80 backdrop-blur-xl border border-zinc-200/60;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+html.dark .glass {
+  @apply bg-white/[0.06] border-white/[0.08];
   box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .glass-strong {
-  @apply bg-white/[0.08] backdrop-blur-2xl border border-white/[0.10];
+  @apply bg-white/90 backdrop-blur-2xl border border-zinc-200/70;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+html.dark .glass-strong {
+  @apply bg-white/[0.08] border-white/[0.10];
   box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .glass-subtle {
-  @apply bg-white/[0.03] backdrop-blur-md border border-white/[0.06];
+  @apply bg-white/60 backdrop-blur-md border border-zinc-200/50;
+}
+html.dark .glass-subtle {
+  @apply bg-white/[0.03] border-white/[0.06];
 }
 
 /* ===== Scrollbar ===== */
@@ -80,8 +108,80 @@ body {
 
 /* ===== Header ===== */
 .header-glass {
-  @apply sticky top-0 z-40 backdrop-blur-2xl border-b border-white/[0.06];
+  @apply sticky top-0 z-40 backdrop-blur-2xl border-b border-zinc-200/60;
+  background: rgba(248,250,252,0.8);
+}
+html.dark .header-glass {
+  @apply border-white/[0.06];
   background: rgba(7,10,20,0.7);
+}
+
+/* ===== Light mode overrides for components ===== */
+.input {
+  @apply bg-zinc-50 border-zinc-200 text-zinc-800 placeholder:text-zinc-400;
+}
+html.dark .input {
+  @apply bg-white/[0.06] border-white/[0.08] text-white placeholder:text-zinc-500;
+}
+.btn-ghost {
+  @apply bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50;
+}
+html.dark .btn-ghost {
+  @apply bg-white/[0.06] border-white/[0.08] text-zinc-300 hover:bg-white/[0.10] hover:text-white;
+}
+.schedule-table th {
+  @apply bg-zinc-50 border-zinc-200 text-zinc-500;
+}
+html.dark .schedule-table th {
+  @apply bg-white/[0.03] border-white/[0.06] text-zinc-400;
+}
+.schedule-table td {
+  @apply border-zinc-200;
+}
+html.dark .schedule-table td {
+  @apply border-white/[0.04];
+}
+.schedule-table td + td {
+  @apply border-zinc-200/60;
+}
+html.dark .schedule-table td + td {
+  @apply border-white/[0.02];
+}
+.schedule-table tbody tr:hover {
+  @apply bg-zinc-50;
+}
+html.dark .schedule-table tbody tr:hover {
+  @apply bg-white/[0.03];
+}
+.course-btn {
+  @apply bg-white border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300;
+}
+html.dark .course-btn {
+  @apply bg-white/[0.04] border-white/[0.07] hover:bg-white/[0.07] hover:border-white/15;
+}
+.course-btn.selected {
+  @apply bg-cyan-50 border-cyan-200;
+}
+html.dark .course-btn.selected {
+  @apply bg-gradient-to-br from-cyan-500/15 to-violet-500/15 border-cyan-400/30;
+}
+.progress-track {
+  @apply bg-zinc-200;
+}
+html.dark .progress-track {
+  @apply bg-white/[0.06];
+}
+.modal-card {
+  @apply bg-white border-zinc-200;
+}
+html.dark .modal-card {
+  @apply bg-white/[0.08] border-white/[0.10];
+}
+.toast {
+  @apply bg-white border-zinc-200 text-zinc-800;
+}
+html.dark .toast {
+  @apply bg-zinc-900 border-white/10 text-white;
 }
 
 /* ===== Timer ring ===== */
@@ -90,16 +190,17 @@ body {
 .timer-ring-fg.break { stroke: #ec4899; }
 
 /* ===== Table ===== */
-.schedule-table { @apply w-full text-sm; border-collapse: separate; border-spacing: 0; }
+.schedule-table { @apply w-full text-sm; border-collapse: collapse; table-layout: fixed; }
 .schedule-table th {
   @apply text-[11px] font-bold tracking-widest uppercase text-zinc-400 px-3 py-2.5 text-left;
-  @apply bg-white/[0.03] border-y border-white/[0.06];
-  position: sticky; top: 61px; z-index: 10; backdrop-filter: blur(12px);
+  @apply bg-white/[0.03] border-b border-white/[0.06];
+  position: sticky; top: 60px; z-index: 10; backdrop-filter: blur(12px);
 }
 .schedule-table td { @apply px-3 py-3 border-b border-white/[0.04] align-middle; }
 .schedule-table tbody tr { @apply hover:bg-white/[0.03] transition-colors; }
 .schedule-table tbody tr.row-completed { @apply opacity-50; }
 .schedule-table tbody tr.row-completed td { @apply line-through decoration-white/20; }
+.schedule-table .date-group-header td { @apply border-b border-white/[0.06] bg-white/[0.04]; }
 
 /* ===== Progress ===== */
 .progress-track { @apply h-2 rounded-full bg-white/[0.06] overflow-hidden; }

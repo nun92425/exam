@@ -5,6 +5,7 @@ import { initAuth, bindAuthModals, getCurrentUser, authReady } from './auth.js'
 import { getConfig, getVersions } from './firestore.js'
 import { auth, db, isConfigured } from './firebase.js'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { initTheme } from './theme.js'
 
 let versions=[]
 
@@ -103,7 +104,7 @@ async function handleSubmit(e){
 }
 
 document.addEventListener('DOMContentLoaded', async ()=>{
-  initAuth(); bindAuthModals()
+  initTheme(); initAuth(); bindAuthModals()
   loadVersions()
   const saved=localStorage.getItem('exam_course_selected')
   if(saved) $('#sugCourse').value=saved

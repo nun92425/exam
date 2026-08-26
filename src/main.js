@@ -3,6 +3,7 @@ import { COURSES, STORAGE_KEYS, SUBJECT_COLORS, getSubjects } from './constants.
 import { $, show, hide, toast, escHtml, escAttr, parseScheduleDate, escapeICS, formatICSDate, getProgressKey } from './utils.js'
 import { initAuth, bindAuthModals, getIsAdmin, authReady } from './auth.js'
 import { getConfig, getSchedules, getSubmissions } from './firestore.js'
+import { initTheme, toggleTheme } from './theme.js'
 
 let state = {
   course: null, config: null, schedule: [], submissions: [], subjects: [],
@@ -230,7 +231,7 @@ function renderSchedule(){
       if(date && date!==lastDate){
         lastDate=date
         const tr=document.createElement('tr')
-        tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
+        tr.innerHTML=`<td colspan="5" class="date-group-header !py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent text-xs font-bold tracking-wide text-zinc-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
         tbody.appendChild(tr)
       }
       const tr=document.createElement('tr')
@@ -936,13 +937,10 @@ function initMenu(){
     const a=item.dataset.action
     if(a==='changeCourse'){ close(); showCourseModal() }
     else if(a==='exportCalendar'){ close(); exportCalendar() }
-    else if(a==='toggleDarkMode'){ close(); toast('テーマはダーククールを維持しています') }
+    else if(a==='toggleDarkMode'){ close(); toggleTheme() }
     else if(a==='openTimer'){ close(); openTimerModal() }
     else if(a==='scrollTo'){ close(); const t=document.getElementById(item.dataset.target); t?.scrollIntoView({behavior:'smooth',block:'start'}) }
   })
-}
-function initDark(){
-  $('#darkModeBtn')?.addEventListener('click', ()=> toast('ダーククールテーマで固定表示しています'))
 }
 
 function setViewMode(mode){
@@ -1002,8 +1000,8 @@ function initFilters(){
 
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
-  initAuth(); bindAuthModals()
-  initMenu(); initDark(); initFilters(); initPlanAndShare()
+  initTheme(); initAuth(); bindAuthModals()
+  initMenu(); initFilters(); initPlanAndShare()
   $('#printBtn')?.addEventListener('click', ()=> window.print())
   $('#calendarExportBtn')?.addEventListener('click', exportCalendar)
   $('#resetProgressBtn')?.addEventListener('click', resetProgress)

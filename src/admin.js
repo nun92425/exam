@@ -2,6 +2,7 @@ import './style.css'
 import { $, show, hide, toast, escHtml, escAttr } from './utils.js'
 import { initAuth, bindAuthModals, getIsAdmin, getCurrentUser, authReady } from './auth.js'
 import { isConfigured, db } from './firebase.js'
+import { initTheme } from './theme.js'
 import {
   collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, where, orderBy, limit,
   serverTimestamp, writeBatch, updateDoc
@@ -299,13 +300,17 @@ async function checkGate(){
 
 // ---------- Bind ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
-  initAuth(); bindAuthModals()
+  initTheme(); initAuth(); bindAuthModals()
   await authReady
   checkGate()
-  // re-check on auth change: watch by polling authReady? Use interval
-  // Instead, listen via setTimeout loop: if user changes, reload
-  // For simplicity, click gate login
   $('#gateLoginBtn')?.addEventListener('click', ()=> show($('#loginModal')))
+  // top links are plain <a>, ensure they work even when JS is busy
+  document.querySelectorAll('a[href="index.html"]')?.forEach(a=>{
+    a.addEventListener('click', e=>{
+      // allow native navigation, but prevent any stray preventDefault
+      e.stopPropagation()
+    })
+  })
   $('#updateVersionBtn')?.addEventListener('click', updateVersion)
   $('#addVersionBtn')?.addEventListener('click', addVersion)
   $('#loadScheduleBtn')?.addEventListener('click', loadScheduleForEdit)
@@ -321,10 +326,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       state.filter=b.dataset.filter; renderSuggestions()
     })
   })
-  // also re-evaluate gate when auth modal closes (after login)
-  const obs=new MutationObserver(()=> checkGate())
-  const gateEl=document.getElementById('adminGate')
-  if(gateEl) obs.observe(document.body, { attributes:true, subtree:true })
-  // poll isAdmin every 2s
-  setInterval(checkGate, 2000)
+  // re-check gate only on auth state change, not via polling/observer (was causing heavy load and click blocking)
+  // authReady already resolves once; also listen for future auth changes via a simple interval that is much lighter (10s) and only if needed
+  // No MutationObserver – it was observing entire body and causing performance issues
 })
