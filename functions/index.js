@@ -62,14 +62,24 @@ export const coachChat = onCall({ region: 'asia-northeast1', secrets: [GEMINI_AP
   ]
 
   try{
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents, generationConfig: { temperature: 0.7, maxOutputTokens: 800 } })
-    })
-    const data = await resp.json()
+    // Free Tier now uses gemini-3.6-flash / gemma; try primary then fallback
+    const tryModels = ['gemini-3.6-flash', 'gemma-4-26b-a4b-it', 'gemma-4-31b-it']
+    let resp, data
+    let lastErr = null
+    for(const model of tryModels){
+      resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents, generationConfig: { temperature: 0.7, maxOutputTokens: 800 } })
+      })
+      data = await resp.json()
+      if(resp.ok) break
+      lastErr = data
+      // if not quota/billing, try next model
+      if(resp.status !== 404) break
+    }
     if(!resp.ok){
-      const msg = data?.error?.message || `Geminiエラー: ${resp.status}`
+      const msg = (data || lastErr)?.error?.message || `Geminiエラー: ${resp.status}`
       if(resp.status === 429) throw new HttpsError('resource-exhausted', '混雑中です。30秒後に再試行してください。')
       throw new HttpsError('internal', msg)
     }
