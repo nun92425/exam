@@ -186,24 +186,32 @@ html.dark .toast {
 
 /* ===== Timer ring ===== */
 .timer-ring-bg { stroke: rgba(255,255,255,0.08); }
+html:not(.dark) .timer-ring-bg { stroke: rgba(0,0,0,0.08); }
 .timer-ring-fg { stroke: url(#grad); transition: stroke-dashoffset 1s linear; stroke-linecap: round; }
 .timer-ring-fg.break { stroke: #ec4899; }
 
 /* ===== Table ===== */
 .schedule-table { @apply w-full text-sm; border-collapse: collapse; table-layout: fixed; }
 .schedule-table th {
-  @apply text-[11px] font-bold tracking-widest uppercase text-zinc-400 px-3 py-2.5 text-left;
-  @apply bg-white/[0.03] border-b border-white/[0.06];
-  position: sticky; top: 60px; z-index: 10; backdrop-filter: blur(12px);
+  @apply text-[11px] font-bold tracking-widest uppercase px-3 py-2.5 text-left;
+  @apply bg-zinc-50 border-b border-zinc-200 text-zinc-500;
+  position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
 }
-.schedule-table td { @apply px-3 py-3 border-b border-white/[0.04] align-middle; }
-.schedule-table tbody tr { @apply hover:bg-white/[0.03] transition-colors; }
+html.dark .schedule-table th {
+  @apply bg-white/[0.03] border-white/[0.06] text-zinc-400;
+}
+.schedule-table td { @apply px-3 py-3 border-b border-zinc-200 align-middle; }
+html.dark .schedule-table td { @apply border-white/[0.04]; }
+.schedule-table tbody tr { @apply hover:bg-zinc-50 transition-colors; }
+html.dark .schedule-table tbody tr { @apply hover:bg-white/[0.03]; }
 .schedule-table tbody tr.row-completed { @apply opacity-50; }
-.schedule-table tbody tr.row-completed td { @apply line-through decoration-white/20; }
-.schedule-table .date-group-header td { @apply border-b border-white/[0.06] bg-white/[0.04]; }
+.schedule-table tbody tr.row-completed td { @apply line-through decoration-zinc-400; }
+html.dark .schedule-table tbody tr.row-completed td { @apply decoration-white/20; }
+.schedule-table .date-group-header td { @apply border-b bg-zinc-100 text-zinc-600; }
+html.dark .schedule-table .date-group-header td { @apply border-white/[0.06] bg-white/[0.04] text-zinc-300; }
 
 /* ===== Progress ===== */
-.progress-track { @apply h-2 rounded-full bg-white/[0.06] overflow-hidden; }
+.progress-track { @apply h-2 rounded-full overflow-hidden; }
 .progress-fill { @apply h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 transition-all duration-500; }
 
 /* ===== Modal ===== */
@@ -211,26 +219,25 @@ html.dark .toast {
   @apply fixed inset-0 z-50 flex items-center justify-center p-4;
   background: rgba(3,6,18,0.72); backdrop-filter: blur(8px);
 }
+html:not(.dark) .modal-backdrop {
+  background: rgba(0,0,0,0.32); backdrop-filter: blur(8px);
+}
 .modal-card {
-  @apply w-full max-w-[460px] rounded-[20px] p-6 glass-strong;
+  @apply w-full max-w-[460px] rounded-[20px] p-6;
   animation: modalIn .25s cubic-bezier(.16,1,.3,1);
 }
 @keyframes modalIn { from { opacity:0; transform: translateY(12px) scale(.98); } to { opacity:1; transform:none; } }
 
 /* ===== Toast ===== */
 .toast {
-  @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-2xl text-sm font-medium
-         bg-zinc-900 border border-white/10 text-white shadow-2xl;
+  @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-2xl text-sm font-medium shadow-2xl;
   animation: toastIn .25s ease;
 }
 @keyframes toastIn { from { opacity:0; transform: translate(-50%, 12px); } to { opacity:1; transform: translate(-50%,0); } }
 
 /* ===== Course button ===== */
 .course-btn {
-  @apply w-full text-left p-4 rounded-2xl border bg-white/[0.04] border-white/[0.07] hover:bg-white/[0.07] hover:border-white/15 transition-all duration-200;
-}
-.course-btn.selected {
-  @apply bg-gradient-to-br from-cyan-500/15 to-violet-500/15 border-cyan-400/30 shadow-[0_0_20px_rgba(6,182,214,0.15)];
+  @apply w-full text-left p-4 rounded-2xl border transition-all duration-200;
 }
 
 /* ===== Shimmer ===== */
@@ -247,6 +254,34 @@ html.dark .toast {
 /* Density */
 html[data-density="compact"] .schedule-table td { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 html[data-density="compact"] .schedule-table th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+/* ===== Light mode comprehensive fixes ===== */
+html:not(.dark) .text-zinc-400 { @apply text-zinc-500; }
+html:not(.dark) .text-zinc-500 { @apply text-zinc-600; }
+html:not(.dark) #filterBar { @apply bg-zinc-50/80 border-zinc-200/60; }
+html:not(.dark) #subjectChips button { @apply border-zinc-200; }
+html:not(.dark) #subjectChips button.bg-white\/10 { @apply bg-white border-zinc-200 text-zinc-700; }
+html:not(.dark) .menu-dropdown { @apply bg-white border-zinc-200; }
+html:not(.dark) .menu-item { @apply text-zinc-700 hover:bg-zinc-50; }
+html:not(.dark) .menu-item .menu-icon { @apply text-zinc-500; }
+html:not(.dark) #scheduleCards > div { @apply border-zinc-200; }
+html:not(.dark) .badge { @apply border-zinc-200; }
+html:not(.dark) .progress-track { @apply bg-zinc-200; }
+html:not(.dark) #topProgressCard { @apply border-zinc-200/60; }
+html:not(.dark) .header-glass .text-zinc-400 { @apply text-zinc-500; }
+html:not(.dark) #viewTableBtn.bg-transparent,
+html:not(.dark) #viewCardBtn.bg-transparent,
+html:not(.dark) #viewCalendarBtn.bg-transparent,
+html:not(.dark) #viewTimelineBtn.bg-transparent { @apply bg-zinc-100 text-zinc-600 border border-zinc-200; }
+html:not(.dark) #filterBar .bg-white\/\[0\.06\] { @apply bg-zinc-100 border-zinc-200; }
+html:not(.dark) #filterBar .bg-white\/10 { background-color: white; @apply border-zinc-200 text-zinc-700; }
+html:not(.dark) #filterBar .text-zinc-400 { @apply text-zinc-600; }
+html:not(.dark) #topProgressCard .bg-white\/5 { @apply bg-zinc-100 border-zinc-200; }
+html:not(.dark) .header-glass button.bg-white\/\[0\.06\] { background-color: white; @apply border-zinc-200 text-zinc-700; }
+html:not(.dark) .header-glass button.bg-white { @apply bg-zinc-900 text-white; }
+html:not(.dark) .input { @apply bg-white border-zinc-300; }
+html:not(.dark) .glass .text-zinc-300 { @apply text-zinc-700; }
+html:not(.dark) .glass .text-zinc-500 { @apply text-zinc-600; }
 
 /* Print */
 @media print {
