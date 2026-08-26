@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: test-coverage
+    env: static
+    plan: free
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    # SPAではないため rewrite 不要（index/suggest/admin はそれぞれ実ファイル）
+    # 環境変数は Renderダッシュボード > Environment で設定してください
+    # VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID,
+    # VITE_FIREBASE_STORAGE_BUCKET, VITE_FIREBASE_MESSAGING_SENDER_ID,
+    # VITE_FIREBASE_APP_ID, VITE_FIREBASE_MEASUREMENT_ID
+    # 未設定でもデモモード（モックデータ）で表示されます
