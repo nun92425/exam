@@ -108,21 +108,34 @@ export function initCoach(stateRef){
       const context = buildContext(state)
       let reply
       if(!isConfigured){
-        reply = `（デモ） understanding: "${text}"\n\nヒント: 範囲を日割りし、1日3科目まで、試験前日は復習日に。詳細は「学習計画」ボタンで生成できます。`
+        reply = `（デモ）\n質問: ${text}\n\nヒント: 範囲を日割りし、1日3科目まで、試験前日は復習日にしてください。詳細は「学習計画」ボタンで生成できます。`
       } else {
-        const functions = getFunctions(app, 'asia-northeast1')
-        const fn = httpsCallable(functions, 'coachChat')
-        const res = await fn({ message: text, context, history: chatHistory.slice(-6) })
-        reply = res.data.reply
+        try{
+          const functions = getFunctions(app, 'asia-northeast1')
+          const fn = httpsCallable(functions, 'coachChat')
+          const res = await fn({ message: text, context, history: chatHistory.slice(-6) })
+          reply = res.data.reply
+        } catch(fnErr){
+          // Functions未デプロイやinternalエラーはデモとして親切にフォールバック
+          const code = fnErr?.code || ''
+          const rawMsg = fnErr?.message || ''
+          if(code.includes('not-found') || code.includes('unavailable') || rawMsg.includes('not found') || code==='internal' || rawMsg.includes('internal')){
+            reply = `AIコーチは現在準備中（Functions未デプロイ）です。\n\n質問: ${text}\n\nヒント: 範囲を日割りし、1日3科目まで、試験前日は復習日に。詳細は「学習計画」ボタンで生成できます。\n\n※ 管理者は Firebase Console → Functions → coachChat をデプロイし、GEMINI_API_KEY を設定してください。`
+          } else {
+            throw fnErr
+          }
+        }
       }
       chatHistory.push({role:'assistant', content:reply})
       render()
       saveHistory()
     } catch(e){
       const msg=e?.message||'エラーが発生しました。しばらくしてから再試行してください。'
-      // 429 handling
-      if(msg.includes('混雑') || msg.includes('resource-exhausted')){
+      const code=e?.code||''
+      if(msg.includes('混雑') || msg.includes('resource-exhausted') || code.includes('resource-exhausted')){
         chatHistory.push({role:'assistant', content:'混雑中です。30秒後に再試行してください。（Gemini Free Tierの60回/分制限）'})
+      } else if(code.includes('internal') || msg.includes('internal')){
+        chatHistory.push({role:'assistant', content:'AIの呼び出しで内部エラーが発生しました。Functionsが未デプロイか、GEMINI_API_KEYが未設定の可能性があります。しばらくしてから再試行するか、「学習計画」ボタンで日割り計画を生成してください。'})
       } else {
         chatHistory.push({role:'assistant', content: msg})
       }
