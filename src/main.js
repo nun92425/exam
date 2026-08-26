@@ -632,6 +632,7 @@ function updateTimerStats(){
   }
   if(!has) html+='<div class="text-xs text-zinc-500 mt-1">まだ記録がありません</div>'
   container.innerHTML=html
+  try{ renderHeatmap(); renderPie(); }catch{}
 }
 
 // ---------- Calendar ----------
@@ -668,6 +669,259 @@ function parseICSDate(str){
 function addDays(s,n){
   const y=parseInt(s.slice(0,4)), m=parseInt(s.slice(4,6))-1, d=parseInt(s.slice(6,8))
   const dt=new Date(y,m,d); dt.setDate(dt.getDate()+n); return formatICSDate(dt)
+}
+
+// ---------- Plan Generator ----------
+function getPlanKey(){ return `exam_plan_${state.config?.version||'v'}_${state.course||'c'}` }
+function parsePages(scope){
+  const regs=[/p\.?\s*(\d+)[〜~\-～ー]+\s*(\d+)/gi, /(\d+)\s*ページ.*?(\d+)\s*ページ/gi]
+  for(const re of regs){
+    const m=[...scope.matchAll(re)]
+    if(m.length){
+      let total=0
+      for(const x of m){ const a=parseInt(x[1]), b=parseInt(x[2]); if(!isNaN(a)&&!isNaN(b)&&b>=a) total+= b-a+1 }
+      if(total>0) return total
+    }
+  }
+  // fallback: count lines or estimate
+  const lines=scope.split('\n').filter(s=>s.trim()).length
+  return Math.max(1, lines*5) // heuristic
+}
+function generatePlan(){
+  const rows=filteredSchedules()
+  if(rows.length===0){ toast('計画を生成するテスト範囲がありません'); return }
+  const today=new Date(); today.setHours(0,0,0,0)
+  const plan=[]
+  for(const r of rows){
+    const d=parseScheduleDate(r.date)
+    if(!d) continue
+    const diff=Math.ceil((d - today)/(1000*60*60*24))
+    if(diff<=0) continue
+    const total=parsePages(r.scope||'')
+    const perDay=Math.ceil(total/diff)
+    for(let i=0;i<diff;i++){
+      const cur=new Date(today); cur.setDate(cur.getDate()+i)
+      const iso=cur.toISOString().slice(0,10)
+      const task = total>1 ? `${r.subject} ${r.scope.split('\n')[0].slice(0,20)}… ${i*perDay+1}〜${Math.min((i+1)*perDay, total)}ページ` : `${r.subject}: ${r.scope.slice(0,30)}`
+      plan.push({ date: iso, subject: r.subject, task, period: r.period||'', color: r.color||SUBJECT_COLORS[r.subject]||'#3B82F6' })
+    }
+  }
+  // sort by date
+  plan.sort((a,b)=> a.date.localeCompare(b.date))
+  localStorage.setItem(getPlanKey(), JSON.stringify(plan))
+  // init done flags
+  renderPlan()
+  toast(`学習計画を生成しました（${plan.length}件）`)
+}
+function renderPlan(){
+  const wrap=$('#planContent')
+  if(!wrap) return
+  const raw=localStorage.getItem(getPlanKey())
+  if(!raw){ wrap.innerHTML='<div class="p-6 text-center text-sm text-zinc-500">「計画を生成」ボタンで日割り計画を作成します。<br>テスト日までの残り日数で範囲を自動分割します。</div>'; return }
+  const plan=JSON.parse(raw)
+  if(plan.length===0){ wrap.innerHTML='<div class="p-6 text-center text-sm text-zinc-500">計画データがありません</div>'; return }
+  // group by date
+  const byDate=new Map()
+  for(const p of plan){
+    if(!byDate.has(p.date)) byDate.set(p.date, [])
+    byDate.get(p.date).push(p)
+  }
+  let html=''
+  for(const [date, items] of byDate){
+    const d=new Date(date)
+    const label=d.toLocaleDateString('ja-JP', { month:'numeric', day:'numeric', weekday:'short' })
+    const isToday=new Date().toISOString().slice(0,10)===date
+    html+=`<div class="p-3 rounded-2xl ${isToday?'bg-cyan-500/10 border border-cyan-400/20':'bg-white/[0.03] border border-white/5'}">
+      <div class="flex items-center justify-between mb-2"><span class="text-sm font-bold ${isToday?'text-cyan-300':''}">${label} ${isToday?'(今日)':''}</span><span class="text-xs text-zinc-500">${items.length}件</span></div>
+      <div class="space-y-1.5">`
+    for(let i=0;i<items.length;i++){
+      const it=items[i]
+      const idx=plan.indexOf(it)
+      const key=`exam_plan_done_${getPlanKey()}_${idx}`
+      const done=localStorage.getItem(key)==='true'
+      html+=`<label class="flex items-start gap-2 p-2 rounded-xl ${done?'bg-white/5 opacity-60':'bg-white/[0.04] hover:bg-white/[0.06]'} border border-white/5 cursor-pointer">
+        <input type="checkbox" data-plan="${idx}" ${done?'checked':''} class="mt-0.5 w-4 h-4 accent-cyan-400">
+        <span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:${it.color}"></span>
+        <span class="flex-1 text-xs leading-relaxed ${done?'line-through decoration-white/30':''}">${escHtml(it.subject)} — ${escHtml(it.task)}</span>
+      </label>`
+    }
+    html+=`</div></div>`
+  }
+  wrap.innerHTML=html
+  wrap.querySelectorAll('[data-plan]')?.forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const idx=e.target.dataset.plan
+      localStorage.setItem(`exam_plan_done_${getPlanKey()}_${idx}`, e.target.checked?'true':'false')
+      renderPlan()
+    })
+  })
+}
+function clearPlan(){
+  localStorage.removeItem(getPlanKey())
+  // also clear done flags
+  for(let i=localStorage.length-1;i>=0;i--){
+    const k=localStorage.key(i)
+    if(k && k.startsWith(`exam_plan_done_${getPlanKey()}`)) localStorage.removeItem(k)
+  }
+  renderPlan()
+  toast('計画をクリアしました')
+}
+function exportPlanToICS(){
+  const raw=localStorage.getItem(getPlanKey())
+  if(!raw){ toast('先に計画を生成してください'); return }
+  const plan=JSON.parse(raw)
+  const now=new Date(), ds=formatICSDate(now)
+  let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ExamPlan//JP\r\n'
+  plan.forEach((p,i)=>{
+    const d=p.date.replace(/-/g,'')
+    const summary=escapeICS(`勉強: ${p.subject}`)
+    const desc=escapeICS(p.task)
+    const uid=`${d}-plan-${i}@exam`
+    ics+=`BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${ds}T000000Z\r\nSUMMARY:${summary}\r\nDTSTART;VALUE=DATE:${d}\r\nDTEND;VALUE=DATE:${addDays(d,1)}\r\nDESCRIPTION:${desc}\r\nEND:VEVENT\r\n`
+  })
+  ics+='END:VCALENDAR'
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'})
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='study_plan.ics'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+  toast('学習計画をカレンダーに追加しました')
+}
+function openPlanModal(){ $('#planModal').classList.remove('hidden'); renderPlan() }
+function closePlanModal(){ $('#planModal').classList.add('hidden') }
+
+// ---------- Timer Visualization ----------
+function getStudyMap(days=7){
+  const map=new Map()
+  const today=new Date()
+  for(let i=0;i<days;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i)
+    const iso=d.toISOString().slice(0,10)
+    let total=0
+    for(let j=0;j<localStorage.length;j++){
+      const k=localStorage.key(j)
+      if(k && k.startsWith(TIMER_PREFIX+iso)){
+        total+= parseInt(localStorage.getItem(k))||0
+      }
+    }
+    map.set(iso, Math.round(total/60))
+  }
+  return map
+}
+function renderHeatmap(){
+  const wrap=$('#heatmap')
+  if(!wrap) return
+  const map=getStudyMap(7)
+  const vals=[...map.values()]
+  const max=Math.max(1, ...vals)
+  wrap.innerHTML=''
+  for(const [iso, min] of [...map.entries()].reverse()){
+    const d=new Date(iso)
+    const label=d.toLocaleDateString('ja-JP',{ month:'numeric', day:'numeric' })
+    const intensity=min/max
+    const bg = intensity===0 ? 'bg-white/[0.04] border-white/5' : intensity<0.33 ? 'bg-cyan-500/20 border-cyan-500/20' : intensity<0.66 ? 'bg-cyan-500/40 border-cyan-500/30' : 'bg-gradient-to-br from-cyan-400 to-violet-500 border-cyan-400/30'
+    wrap.innerHTML+=`<div class="flex flex-col items-center gap-1">
+      <div class="w-full h-10 rounded-lg border grid place-items-center text-[10px] font-bold ${bg}">${min>0?`${min}m`:''}</div>
+      <span class="text-[10px] text-zinc-500">${label}</span>
+    </div>`
+  }
+  // streak
+  const badge=$('#streakBadge')
+  if(badge){
+    let streak=0
+    const today=new Date()
+    for(let i=0;i<30;i++){
+      const d=new Date(today); d.setDate(d.getDate()-i)
+      const iso=d.toISOString().slice(0,10)
+      let has=false
+      for(let j=0;j<localStorage.length;j++){ const k=localStorage.key(j); if(k&&k.startsWith(TIMER_PREFIX+iso) && parseInt(localStorage.getItem(k))>0) has=true }
+      if(has) streak++; else if(i>0) break
+    }
+    if(streak>=2){ badge.textContent=`${streak}日連続`; badge.classList.remove('hidden') } else badge.classList.add('hidden')
+  }
+}
+function renderPie(){
+  const wrap=$('#pieChart'), legend=$('#pieLegend')
+  if(!wrap) return
+  const map=new Map()
+  const weekMap=getStudyMap(7)
+  for(const iso of weekMap.keys()){
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i)
+      if(k && k.startsWith(TIMER_PREFIX+iso+'_')){
+        const subj=k.replace(TIMER_PREFIX+iso+'_','')
+        const sec=parseInt(localStorage.getItem(k))||0
+        const min=Math.round(sec/60)
+        map.set(subj, (map.get(subj)||0)+min)
+      }
+    }
+  }
+  if(map.size===0){ wrap.innerHTML='<span class="text-xs text-zinc-500">データがありません</span>'; legend.innerHTML=''; return }
+  const total=[...map.values()].reduce((a,b)=>a+b,0)
+  let offset=0
+  const colors=['#22d3ee','#8b5cf6','#ec4899','#10b981','#f59e0b','#3b82f6','#ef4444']
+  let idx=0
+  let svg=`<svg viewBox="0 0 100 100" class="w-[88px] h-[88px] -rotate-90">`
+  for(const [subj, min] of map){
+    const pct=min/total
+    const angle=pct*360
+    const large= angle>180?1:0
+    const x1=50+40*Math.cos((offset)*Math.PI/180), y1=50+40*Math.sin((offset)*Math.PI/180)
+    const x2=50+40*Math.cos((offset+angle)*Math.PI/180), y2=50+40*Math.sin((offset+angle)*Math.PI/180)
+    const col=colors[idx++ % colors.length]
+    if(pct>=0.99) svg+=`<circle cx="50" cy="50" r="40" fill="none" stroke="${col}" stroke-width="12"/>`
+    else if(pct>0) svg+=`<path d="M ${x1} ${y1} A 40 40 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round"/>`
+    offset+=angle
+  }
+  svg+=`<circle cx="50" cy="50" r="28" fill="#0F162E" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><text x="50" y="52" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="800" fill="white">${total}m</text></svg>`
+  wrap.innerHTML= svg + `<div class="text-xs text-zinc-400 leading-relaxed">直近7日で<br><span class="text-white font-bold">${total}分</span> 学習</div>`
+  legend.innerHTML=[...map.entries()].map(([s,m],i)=>`<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/5 border border-white/5 text-xs"><span class="w-2 h-2 rounded-full" style="background:${colors[i%colors.length]}"></span>${escHtml(s)} ${m}m</span>`).join('')
+}
+
+// ---------- Share ----------
+function getShareText(){
+  const today=new Date().toISOString().slice(0,10)
+  let todayMin=0
+  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith(TIMER_PREFIX+today)) todayMin+= Math.round((parseInt(localStorage.getItem(k))||0)/60) }
+  const done=state.submissions.filter((r,i)=> localStorage.getItem(getProgressKey(state.config?.version, state.course, r.subject, r.notes, i))==='true').length
+  const total=state.submissions.length
+  const earliest=filteredSchedules().map(r=> parseScheduleDate(r.date)).filter(Boolean).sort((a,b)=>a-b)[0]
+  const diff= earliest ? Math.ceil((earliest - new Date(new Date().setHours(0,0,0,0)))/(1000*60*60*24)) : null
+  const lines=[
+    'テスト範囲表 進捗共有',
+    state.config?.version ? ` ${state.config.version} (${state.course||''})` : '',
+    diff!==null ? `次のテストまであと${diff}日` : '',
+    total? `提出物 ${done}/${total} (${total?Math.round(done/total*100):0}%)` : '',
+    `今日の勉強 ${todayMin}分`,
+    location.href
+  ].filter(Boolean)
+  return lines.join('\n')
+}
+function openShareModal(){
+  const txt=getShareText()
+  $('#sharePreview').textContent=txt
+  const enc=encodeURIComponent(txt)
+  $('#shareLineBtn').href=`https://line.me/R/msg/text/?${enc}`
+  $('#shareXBtn').href=`https://twitter.com/intent/tweet?text=${enc}`
+  $('#shareModal').classList.remove('hidden')
+}
+function closeShareModal(){ $('#shareModal').classList.add('hidden') }
+function initPlanAndShare(){
+  $('#planBtn')?.addEventListener('click', openPlanModal)
+  $('#planCloseBtn')?.addEventListener('click', closePlanModal)
+  $('#planModal')?.addEventListener('click', e=>{ if(e.target===$('#planModal')) closePlanModal() })
+  $('#planGenerateBtn')?.addEventListener('click', generatePlan)
+  $('#planClearBtn')?.addEventListener('click', clearPlan)
+  $('#planExportBtn')?.addEventListener('click', exportPlanToICS)
+  $('#shareBtn')?.addEventListener('click', openShareModal)
+  $('#shareCloseBtn')?.addEventListener('click', closeShareModal)
+  $('#shareModal')?.addEventListener('click', e=>{ if(e.target===$('#shareModal')) closeShareModal() })
+  $('#shareCopyBtn')?.addEventListener('click', async ()=>{
+    const txt=getShareText()
+    try{ await navigator.clipboard.writeText(txt); toast('リンクをコピーしました') }catch{ toast('コピーに失敗しました') }
+  })
+  $('#shareNativeBtn')?.addEventListener('click', async ()=>{
+    const txt=getShareText()
+    if(navigator.share){ try{ await navigator.share({ title:'テスト範囲表', text: txt }) }catch{} }
+    else { try{ await navigator.clipboard.writeText(txt); toast('コピーしました（端末共有は非対応）') }catch{} }
+  })
 }
 
 // ---------- Menu ----------
@@ -749,7 +1003,7 @@ function initFilters(){
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
   initAuth(); bindAuthModals()
-  initMenu(); initDark(); initFilters()
+  initMenu(); initDark(); initFilters(); initPlanAndShare()
   $('#printBtn')?.addEventListener('click', ()=> window.print())
   $('#calendarExportBtn')?.addEventListener('click', exportCalendar)
   $('#resetProgressBtn')?.addEventListener('click', resetProgress)

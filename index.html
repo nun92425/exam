@@ -92,6 +92,10 @@
       <div class="flex-1 min-w-[120px] progress-track"><div id="topProgressBar" class="progress-fill" style="width:0%"></div></div>
       <div class="text-[11px] text-zinc-500 hidden sm:block" id="subProgressMini">0 / 0</div>
       <button id="resetProgressBtn" class="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400">リセット</button>
+      <div class="flex gap-1.5 ml-auto">
+        <button id="planBtn" class="px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M8 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M8 2v6h8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg> 学習計画</button>
+        <button id="shareBtn" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10 inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4"/><path d="M15.4 6.5l-6.8 4"/></svg> 共有</button>
+      </div>
     </section>
 
     <!-- Loading / Error -->
@@ -248,6 +252,59 @@
         <div class="text-xs font-bold tracking-wide text-zinc-400">今日の勉強時間</div>
         <div class="text-xs text-zinc-500 mt-1">まだ記録がありません</div>
       </div>
+      <!-- Heatmap + Pie (Phase3) -->
+      <div class="mt-4 grid gap-3">
+        <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold tracking-wide text-zinc-400">週間ヒートマップ（過去7日）</span>
+            <span id="streakBadge" class="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-200 hidden"></span>
+          </div>
+          <div id="heatmap" class="grid grid-cols-7 gap-1.5"></div>
+          <div class="flex justify-between text-[10px] text-zinc-500 mt-1"><span>少</span><span>多</span></div>
+        </div>
+        <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+          <div class="text-xs font-bold tracking-wide text-zinc-400 mb-2">科目別（直近7日）</div>
+          <div id="pieChart" class="flex items-center gap-3"></div>
+          <div id="pieLegend" class="mt-2 flex flex-wrap gap-1.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan Modal -->
+  <div id="planModal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-[640px] max-h-[85vh] overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M8 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M8 2v6h8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg> 学習計画</h3>
+        <button id="planCloseBtn" class="w-8 h-8 grid place-items-center rounded-full bg-white/10 hover:bg-white/15"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <p class="text-xs text-zinc-500 mt-1">テスト日までの日数から、範囲を自動で日割りします。チェックは端末に保存されます。</p>
+      <div class="flex gap-2 mt-3">
+        <button id="planGenerateBtn" class="btn-primary !py-2 !text-xs">計画を生成</button>
+        <button id="planClearBtn" class="btn-ghost !py-2 !text-xs">クリア</button>
+        <button id="planExportBtn" class="btn-ghost !py-2 !text-xs inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> icsへ追加</button>
+      </div>
+      <div id="planContent" class="mt-4 overflow-auto flex-1 space-y-3 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-[420px]">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4"/><path d="M15.4 6.5l-6.8 4"/></svg> 共有</h3>
+        <button id="shareCloseBtn" class="w-8 h-8 grid place-items-center rounded-full bg-white/10 hover:bg-white/15"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div id="sharePreview" class="mt-4 p-4 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-violet-500/15 border border-white/10 text-sm leading-relaxed whitespace-pre-wrap"></div>
+      <div class="grid grid-cols-2 gap-2 mt-3">
+        <button id="shareCopyBtn" class="btn-ghost !py-2">リンクをコピー</button>
+        <button id="shareNativeBtn" class="btn-primary !py-2">端末で共有</button>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <a id="shareLineBtn" target="_blank" rel="noopener" class="flex-1 btn-ghost !py-2 !bg-[#06C755]/15 !border-[#06C755]/20 !text-[#06C755] text-center">LINE</a>
+        <a id="shareXBtn" target="_blank" rel="noopener" class="flex-1 btn-ghost !py-2 text-center">Xに投稿</a>
+      </div>
+      <p class="text-[11px] text-zinc-500 mt-2 text-center">画像保存はスクリーンショットで対応（今後画像生成を追加予定）</p>
     </div>
   </div>
 
