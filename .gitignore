@@ -2,6 +2,8 @@ node_modules
 dist
 .env
 .env.local
+RENDER_ENV_COPY_PASTE.txt
+FIRESTORE_RULES_TEMP_OPEN.txt
 .firebase
 firebase-debug.log
 firestore-debug.log

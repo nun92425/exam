@@ -1,6 +1,6 @@
 import {
   onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signOut, sendPasswordResetEmail, updateProfile
+  signOut, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode, updateProfile
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, isConfigured } from './firebase.js'
@@ -8,17 +8,36 @@ import { $, show, hide, toast } from './utils.js'
 
 let currentUser = null
 let isAdmin = false
+let pendingOobCode = null
 let authReadyResolve
 export const authReady = new Promise(r => authReadyResolve = r)
+
+function checkPasswordResetParam(){
+  const params = new URLSearchParams(window.location.search)
+  const mode = params.get('mode')
+  const oobCode = params.get('oobCode')
+  if(mode === 'resetPassword' && oobCode){
+    pendingOobCode = oobCode
+    // verify code then show reset modal
+    verifyPasswordResetCode(auth, oobCode).then(()=>{
+      show($('#resetPasswordModal'))
+    }).catch(()=>{
+      toast('無効または期限切れのリンクです')
+      history.replaceState(null,'', location.pathname)
+    })
+  }
+}
 
 export function initAuth(){
   if(!isConfigured || !auth){
     // デモモード: ローカルでログイン不要
-    hide($('#loginModal')); hide($('#registerModal'))
+    hide($('#loginModal')); hide($('#registerModal')); hide($('#resetPasswordModal'))
     authReadyResolve(null)
     updateAuthUI(null)
     return
   }
+  // password reset link check must run before auth state resolves
+  checkPasswordResetParam()
   onAuthStateChanged(auth, async (user)=>{
     currentUser = user
     if(user){
@@ -136,12 +155,32 @@ export async function handleForgot(){
   hideErr('forgotError')
   if(!isConfigured) return showErr('forgotError','Firebase未設定（デモモード）')
   try{
-    await sendPasswordResetEmail(auth, email)
+    const actionCodeSettings = { url: window.location.origin + '/index.html', handleCodeInApp: false }
+    await sendPasswordResetEmail(auth, email, actionCodeSettings)
     $('#forgotError')?.classList.add('hidden')
     const s=$('#forgotSuccess')
     if(s){ s.textContent='リセットメールを送信しました。メールをご確認ください。'; s.classList.remove('hidden') }
     setTimeout(()=> hide($('#forgotPasswordModal')), 3000)
   } catch(e){ showErr('forgotError', mapAuthErr(e)) }
+}
+
+export async function handleResetPassword(){
+  const pw = $('#resetPassword')?.value
+  const pw2 = $('#resetPasswordConfirm')?.value
+  if(!pw || !pw2) return showErr('resetError','新しいパスワードを入力してください')
+  if(pw.length < 8) return showErr('resetError','パスワードは8文字以上必要です')
+  if(pw !== pw2) return showErr('resetError','パスワードが一致しません')
+  hideErr('resetError')
+  if(!pendingOobCode) return showErr('resetError','無効なリンクです。もう一度リセットメールを送信してください')
+  try{
+    await confirmPasswordReset(auth, pendingOobCode, pw)
+    const s=$('#resetSuccess')
+    if(s){ s.textContent='パスワードを変更しました。新しいパスワードでログインしてください'; s.classList.remove('hidden') }
+    // clear oobCode from URL
+    history.replaceState(null,'', location.pathname)
+    pendingOobCode = null
+    setTimeout(()=>{ hide($('#resetPasswordModal')); show($('#loginModal')) }, 2000)
+  } catch(e){ showErr('resetError', mapAuthErr(e)) }
 }
 
 function showErr(id, msg){
@@ -165,9 +204,11 @@ export function bindAuthModals(){
   $('#registerToLogin')?.addEventListener('click', ()=>{ hide($('#registerModal')); show($('#loginModal')) })
   $('#forgotPasswordLink')?.addEventListener('click', ()=>{ hide($('#loginModal')); show($('#forgotPasswordModal')) })
   $('#forgotToLogin')?.addEventListener('click', ()=>{ hide($('#forgotPasswordModal')); show($('#loginModal')) })
+  $('#resetToLogin')?.addEventListener('click', ()=>{ hide($('#resetPasswordModal')); show($('#loginModal')); history.replaceState(null,'', location.pathname); pendingOobCode=null })
   $('#forgotSubmitBtn')?.addEventListener('click', handleForgot)
   $('#loginSubmitBtn')?.addEventListener('click', handleLogin)
   $('#regSubmitBtn')?.addEventListener('click', handleRegister)
+  $('#resetSubmitBtn')?.addEventListener('click', handleResetPassword)
   // 背景クリックで閉じる
   for(const id of ['loginModal','registerModal','forgotPasswordModal','resetPasswordModal']){
     const el=document.getElementById(id)
@@ -175,10 +216,12 @@ export function bindAuthModals(){
   }
   document.addEventListener('keydown', e=>{
     if(e.key==='Escape'){
-      for(const id of ['loginModal','registerModal','forgotPasswordModal']) hide(document.getElementById(id))
+      for(const id of ['loginModal','registerModal','forgotPasswordModal','resetPasswordModal']) hide(document.getElementById(id))
     }
   })
   // Enterで送信
   $('#loginPassword')?.addEventListener('keydown', e=>{ if(e.key==='Enter') handleLogin() })
   $('#regPassword')?.addEventListener('keydown', e=>{ if(e.key==='Enter') handleRegister() })
+  $('#resetPasswordConfirm')?.addEventListener('keydown', e=>{ if(e.key==='Enter') handleResetPassword() })
+  $('#resetPassword')?.addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('resetPasswordConfirm')?.focus() })
 }

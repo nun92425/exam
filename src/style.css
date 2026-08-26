@@ -164,3 +164,7 @@ html[data-density="compact"] .schedule-table th { padding-top: 0.5rem; padding-b
 /* Card view animation */
 #scheduleCards > div { animation: cardIn .22s ease; }
 @keyframes cardIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: none; } }
+
+/* Ensure hidden always wins over modal-backdrop flex */
+.hidden { display: none !important; }
+.modal-backdrop.hidden { display: none !important; }
