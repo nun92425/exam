@@ -4,10 +4,18 @@ import { $, show, hide, toast, escHtml, escAttr, parseScheduleDate, escapeICS, f
 import { initAuth, bindAuthModals, getIsAdmin, authReady } from './auth.js'
 import { getConfig, getSchedules, getSubmissions } from './firestore.js'
 
-let state = { course: null, config: null, schedule: [], submissions: [], subjects: [] }
+let state = {
+  course: null, config: null, schedule: [], submissions: [], subjects: [],
+  filterQuery: '',
+  filterSubject: '',
+  todayOnly: false,
+  sortBy: 'date',
+  viewMode: localStorage.getItem('exam_view_mode') || 'table', // table | card
+  density: localStorage.getItem('exam_density') || 'comfortable', // comfortable | compact
+  subFilter: 'all', // all | todo | done
+}
 
-// ---------- helpers ----------
-const CIRCUMFERENCE = 2 * Math.PI * 78 // ~490.09
+const CIRCUMFERENCE = 2 * Math.PI * 78
 let FOCUS_SEC = 25*60, BREAK_SEC=5*60
 let timer = { mode:'focus', left:FOCUS_SEC, running:false, subject:'', interval:null }
 
@@ -62,14 +70,15 @@ async function loadData(){
       getSchedules(config.version, state.course),
       getSubmissions(config.version, state.course),
     ])
-    // sort schedule by date then period
+    // initial sort by date then period
     schedules.sort((a,b)=>{
       const da=a.date||'', db=b.date||''; if(da<db) return -1; if(da>db) return 1
       const pa=parseInt(a.period)||0, pb=parseInt(b.period)||0; return pa-pb
     })
     state.schedule=schedules
     state.submissions=submissions
-    renderInfo(); renderSchedule(); renderSubmissions(); renderCountdown(); updateProgressUI(); updateLastUpdated(); updateTimerSubjects()
+    renderInfo(); renderSubjectChips(); renderSchedule(); renderSubmissions(); renderCountdown(); updateProgressUI(); updateLastUpdated(); updateTimerSubjects()
+    updateScheduleCount()
   } catch(e){
     show(errorBox); $('#errorMessage').textContent='データの読み込みに失敗しました: '+ (e.message||e)
   } finally { hide(loading) }
@@ -84,52 +93,241 @@ function renderInfo(){
   updateMenuCourseLabel()
 }
 
+function getMemoKey(row,i){
+  const ver=state.config?.version||'v'
+  const c=state.course||'c'
+  return `exam_memo_${ver}_${c}_${row.subject}_${row.date||''}_${row.period||''}_${i}`
+}
+function getDateBadge(dateStr){
+  const d=parseScheduleDate(dateStr)
+  if(!d) return null
+  const today=new Date(); today.setHours(0,0,0,0)
+  const diff=Math.ceil((d - today)/(1000*60*60*24))
+  if(diff===0) return { label:'TODAY', cls:'bg-red-500 text-white border-red-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]' }
+  if(diff===1) return { label:'TOMORROW', cls:'bg-orange-500 text-white border-orange-600' }
+  if(diff>1 && diff<=3) return { label:`あと${diff}日`, cls:'bg-amber-500/15 text-amber-200 border-amber-500/30' }
+  if(diff<0) return { label:'終了', cls:'bg-zinc-700 text-zinc-400 border-zinc-600' }
+  return null
+}
+
+function filteredSchedules(){
+  let rows=[...state.schedule]
+  // today only
+  if(state.todayOnly){
+    const today=new Date(); today.setHours(0,0,0,0)
+    rows=rows.filter(r=>{ const d=parseScheduleDate(r.date); return d && d>=today })
+  }
+  // subject filter
+  if(state.filterSubject){
+    rows=rows.filter(r=> r.subject===state.filterSubject)
+  }
+  // search query
+  if(state.filterQuery){
+    const q=state.filterQuery.toLowerCase()
+    rows=rows.filter(r=> [r.subject,r.scope,r.notes,r.date,r.period].join(' ').toLowerCase().includes(q))
+  }
+  // sort
+  if(state.sortBy==='subject'){
+    rows.sort((a,b)=> (a.subject||'').localeCompare(b.subject||'','ja'))
+  } else if(state.sortBy==='period'){
+    rows.sort((a,b)=> (parseInt(a.period)||99)-(parseInt(b.period)||99))
+  } else {
+    rows.sort((a,b)=>{
+      const da=parseScheduleDate(a.date), db=parseScheduleDate(b.date)
+      if(!da && !db) return 0
+      if(!da) return 1
+      if(!db) return -1
+      if(da-db!==0) return da-db
+      return (parseInt(a.period)||0)-(parseInt(b.period)||0)
+    })
+  }
+  return rows
+}
+
+function updateScheduleCount(){
+  const el=$('#scheduleCount')
+  if(!el) return
+  const total=state.schedule.length
+  const filtered=filteredSchedules().length
+  el.textContent = state.filterQuery||state.filterSubject||state.todayOnly ? `${filtered} / ${total}件` : `${total}件`
+}
+
+function renderSubjectChips(){
+  const wrap=$('#subjectChips')
+  if(!wrap) return
+  wrap.innerHTML=''
+  const allBtn=document.createElement('button')
+  allBtn.textContent='すべて'
+  allBtn.className = !state.filterSubject ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-white text-zinc-900' : 'px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/10'
+  allBtn.addEventListener('click', ()=>{ state.filterSubject=''; renderSubjectChips(); renderSchedule() })
+  wrap.appendChild(allBtn)
+  const uniq=[...new Set(state.subjects.map(s=> typeof s==='string'?s:s.subject))]
+  // also include any subject in schedule not in list
+  for(const r of state.schedule){ if(!uniq.includes(r.subject)) uniq.push(r.subject) }
+  uniq.forEach(sub=>{
+    const btn=document.createElement('button')
+    const active=state.filterSubject===sub
+    btn.className = active ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white' : 'px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/10 hover:bg-white/15'
+    btn.textContent=sub
+    btn.style.borderLeftColor= SUBJECT_COLORS[sub] || '#fff'
+    if(active) btn.style.boxShadow=`0 0 0 1px ${SUBJECT_COLORS[sub]||'#fff'}40`
+    btn.addEventListener('click', ()=>{ state.filterSubject= active ? '' : sub; renderSubjectChips(); renderSchedule() })
+    wrap.appendChild(btn)
+  })
+}
+
 function renderSchedule(){
-  const tbody=$('#scheduleBody'), empty=$('#emptyState')
+  const rows=filteredSchedules()
+  updateScheduleCount()
+  const tbody=$('#scheduleBody'), empty=$('#emptyState'), cards=$('#scheduleCards'), tableWrap=$('#scheduleTable')?.parentElement
+  const isCard = state.viewMode==='card'
+  // view toggle UI
+  $('#viewTableBtn')?.classList.toggle('bg-white', !isCard)
+  $('#viewTableBtn')?.classList.toggle('text-zinc-900', !isCard)
+  $('#viewTableBtn')?.classList.toggle('bg-white/10', isCard)
+  $('#viewCardBtn')?.classList.toggle('bg-white', isCard)
+  $('#viewCardBtn')?.classList.toggle('text-zinc-900', isCard)
+  $('#viewCardBtn')?.classList.toggle('bg-white/10', !isCard)
+  // density button label
+  const dBtn=$('#densityBtn')
+  if(dBtn) dBtn.textContent = state.density==='compact' ? '↕ コンパクト' : '↕ ゆったり'
+  // density class
+  document.documentElement.setAttribute('data-density', state.density)
+
+  if(isCard){
+    if(tableWrap) tableWrap.classList.add('hidden')
+    cards.classList.remove('hidden')
+  } else {
+    if(tableWrap) tableWrap.classList.remove('hidden')
+    cards.classList.add('hidden')
+  }
+
+  // render table
   tbody.innerHTML=''
-  if(!state.schedule || state.schedule.length===0){ show(empty); return }
+  cards.innerHTML=''
+  if(rows.length===0){
+    show(empty)
+    if(isCard) cards.classList.add('hidden')
+    return
+  }
   hide(empty)
+
   let lastDate=''
-  state.schedule.forEach(row=>{
+  rows.forEach((row, idx)=>{
+    const globalIdx=state.schedule.indexOf(row)
     const color=row.color || SUBJECT_COLORS[row.subject] || '#3B82F6'
     const date=row.date||''
-    if(date && date!==lastDate){
-      lastDate=date
+    const badge=getDateBadge(date)
+    const memoKey=getMemoKey(row, globalIdx)
+    const memoVal=localStorage.getItem(memoKey)||''
+    const hasMemo=!!memoVal
+
+    // table row
+    if(!isCard){
+      if(date && date!==lastDate){
+        lastDate=date
+        const tr=document.createElement('tr')
+        tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300 flex items-center gap-2">📅 ${escHtml(date)} ${badge?`<span class="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
+        // colspan td is inside tr, but we used flex; fix: wrap
+        // redo correctly
+        tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300">📅 ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
+        tbody.appendChild(tr)
+      }
       const tr=document.createElement('tr')
-      tr.innerHTML=`<td colspan="5" class="!py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent border-y border-white/5 text-xs font-bold tracking-wide text-zinc-300">📅 ${escHtml(date)}</td>`
+      tr.className = state.density==='compact' ? '[&>td]:!py-2 [&>td]:!text-xs' : ''
+      tr.innerHTML=`
+        <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}; box-shadow:0 0 8px ${color}66"></span><span class="font-semibold text-zinc-100">${escHtml(row.subject)}</span>${hasMemo?'<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>':''}</div></td>
+        <td class="font-mono text-xs whitespace-nowrap"><span class="inline-flex items-center gap-1.5">${escHtml(date)} ${badge&&date===lastDate?'': badge?`<span class="px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</span></td>
+        <td class="text-center"><span class="inline-flex px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold">${escHtml(row.period||'')}</span></td>
+        <td class="text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${escHtml(row.scope||'').replace(/\n/g,'<br>')}</td>
+        <td class="text-zinc-400 text-xs leading-relaxed"><div>${escHtml(row.notes||'').replace(/\n/g,'<br>')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}<button data-memo="${globalIdx}" class="mt-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">${hasMemo?'メモ編集':'＋メモ'}</button></td>`
       tbody.appendChild(tr)
+      // memo expand row
+      const memoBtn=tr.querySelector(`[data-memo="${globalIdx}"]`)
+      memoBtn?.addEventListener('click', ()=>{
+        const cur=localStorage.getItem(memoKey)||''
+        const nv=prompt('個人メモ（自分だけに表示、端末に保存）', cur)
+        if(nv===null) return
+        if(nv) localStorage.setItem(memoKey, nv); else localStorage.removeItem(memoKey)
+        renderSchedule()
+      })
     }
-    const tr=document.createElement('tr')
-    tr.innerHTML=`
-      <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}; box-shadow:0 0 8px ${color}66"></span><span class="font-semibold text-zinc-100">${escHtml(row.subject)}</span></div></td>
-      <td class="font-mono text-xs text-zinc-300 whitespace-nowrap">${escHtml(date)}</td>
-      <td class="text-center"><span class="inline-flex px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold">${escHtml(row.period||'')}</span></td>
-      <td class="text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${escHtml(row.scope||'').replace(/\n/g,'<br>')}</td>
-      <td class="text-zinc-400 text-xs leading-relaxed">${escHtml(row.notes||'').replace(/\n/g,'<br>')}</td>`
-    tbody.appendChild(tr)
+
+    // card
+    const card=document.createElement('div')
+    card.className='p-3 rounded-2xl glass-subtle card-hover flex flex-col gap-2 ' + (state.density==='compact'?'!p-2.5':'')
+    card.innerHTML=`
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${color}"></span><span class="font-bold text-sm">${escHtml(row.subject)}</span></div>
+        <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10">${escHtml(date)} ${escHtml(row.period||'')}</span>
+      </div>
+      ${badge?`<div class="inline-flex self-start px-2 py-0.5 rounded-full text-[11px] font-black border ${badge.cls}">${badge.label} • ${escHtml(date)}</div>`:''}
+      <div class="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed bg-white/[0.03] border border-white/5 rounded-xl p-2.5">${escHtml(row.scope||'（範囲なし）').replace(/\n/g,'<br>')}</div>
+      ${row.notes?`<div class="text-xs text-zinc-400">${escHtml(row.notes).replace(/\n/g,'<br>')}</div>`:''}
+      ${hasMemo?`<div class="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}
+      <button data-memo-card="${globalIdx}" class="self-start text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">📝 ${hasMemo?'メモ編集':'メモ追加'}</button>
+    `
+    card.querySelector(`[data-memo-card="${globalIdx}"]`)?.addEventListener('click', ()=>{
+      const cur=localStorage.getItem(memoKey)||''
+      const nv=prompt('個人メモ', cur)
+      if(nv===null) return
+      if(nv) localStorage.setItem(memoKey, nv); else localStorage.removeItem(memoKey)
+      renderSchedule()
+    })
+    cards.appendChild(card)
   })
 }
 
 function renderSubmissions(){
   const tbody=$('#submissionBody'), empty=$('#subEmptyState')
   tbody.innerHTML=''
-  if(!state.submissions || state.submissions.length===0){ show(empty); updateSubProgressMini(); return }
+  // filter
+  let rows=[...state.submissions]
+  if(state.subFilter==='todo'){
+    rows=rows.filter((r,i)=> localStorage.getItem(getProgressKey(state.config?.version, state.course, r.subject, r.notes, i))!=='true')
+  } else if(state.subFilter==='done'){
+    rows=rows.filter((r,i)=> localStorage.getItem(getProgressKey(state.config?.version, state.course, r.subject, r.notes, i))==='true')
+  }
+  if(rows.length===0){
+    if(state.submissions.length===0){
+      show(empty); empty.querySelector('p').textContent='提出物データがありません'
+    } else {
+      show(empty); empty.querySelector('p').textContent='条件に一致する提出物がありません'
+      // still show but with empty message; keep table empty
+    }
+    updateSubProgressMini()
+    return
+  }
   hide(empty)
-  state.submissions.forEach((row,i)=>{
-    const key=getProgressKey(state.config?.version, state.course, row.subject, row.notes, i)
+  rows.forEach((row)=>{
+    const origIdx=state.submissions.indexOf(row)
+    const key=getProgressKey(state.config?.version, state.course, row.subject, row.notes, origIdx)
     const checked=localStorage.getItem(key)==='true'
     const color=row.color || SUBJECT_COLORS[row.subject] || '#6B7280'
+    const memoKey=`exam_memo_sub_${state.config?.version}_${state.course}_${row.subject}_${origIdx}`
+    const memoVal=localStorage.getItem(memoKey)||''
+    const hasMemo=!!memoVal
     const tr=document.createElement('tr')
     if(checked) tr.classList.add('row-completed')
     tr.innerHTML=`
       <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}"></span><span class="font-semibold">${escHtml(row.subject)}</span></div></td>
-      <td class="text-zinc-300 text-[13px] whitespace-pre-wrap leading-relaxed">${escHtml(row.notes||'')}</td>
-      <td class="text-center"><input type="checkbox" ${checked?'checked':''} class="w-5 h-5 accent-cyan-400 rounded cursor-pointer"></td>`
+      <td class="text-zinc-300 text-[13px] whitespace-pre-wrap leading-relaxed"><div>${escHtml(row.notes||'')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}</td>
+      <td class="text-center"><input type="checkbox" ${checked?'checked':''} class="w-5 h-5 accent-cyan-400 rounded cursor-pointer"></td>
+      <td class="text-center"><button data-memo-sub="${origIdx}" class="w-6 h-6 grid place-items-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-[11px]">${hasMemo?'📝':'＋'}</button></td>`
     const cb=tr.querySelector('input')
     cb.addEventListener('change', ()=>{
       localStorage.setItem(key, cb.checked?'true':'false')
       tr.classList.toggle('row-completed', cb.checked)
       updateProgressUI()
+      // re-apply filter if needed
+      if(state.subFilter!=='all') renderSubmissions()
+    })
+    tr.querySelector(`[data-memo-sub="${origIdx}"]`)?.addEventListener('click', ()=>{
+      const cur=localStorage.getItem(memoKey)||''
+      const nv=prompt('提出物の個人メモ', cur)
+      if(nv===null) return
+      if(nv) localStorage.setItem(memoKey, nv); else localStorage.removeItem(memoKey)
+      renderSubmissions()
     })
     tbody.appendChild(tr)
   })
@@ -138,13 +336,23 @@ function renderSubmissions(){
 
 function updateProgressUI(){
   const boxes=[...document.querySelectorAll('#submissionBody input[type="checkbox"]')]
-  const total=boxes.length, done=boxes.filter(cb=>cb.checked).length
-  const pct= total? (done/total)*100 : 0
-  const text=`${done} / ${total}`
+  const totalFiltered=boxes.length
+  // total for top bar = all submissions (unfiltered) to avoid confusion? Use filtered vs total? Use all for top
+  const allBoxesTotal=state.submissions.length
+  const allDone=state.submissions.filter((r,i)=> localStorage.getItem(getProgressKey(state.config?.version, state.course, r.subject, r.notes, i))==='true').length
+  const pct= allBoxesTotal? (allDone/allBoxesTotal)*100 : 0
+  const text=`${allDone} / ${allBoxesTotal}`
   const topText=$('#topProgressText'); if(topText) topText.textContent=text
-  const mini=$('#subProgressMini'); if(mini) mini.textContent=text
   const badge=$('#subProgressBadge'); if(badge) badge.textContent=text
   const bar=$('#topProgressBar'); if(bar) bar.style.width=pct+'%'
+  const mini=$('#subProgressMini'); if(mini) mini.textContent = `${boxes.filter(cb=>cb.checked).length} / ${boxes.length}（表示中）`
+  // update sub filter buttons active
+  for(const id of ['subAllBtn','subTodoBtn','subDoneBtn']){
+    const el=document.getElementById(id)
+    if(!el) continue
+    const want = (id==='subAllBtn'&&state.subFilter==='all')||(id==='subTodoBtn'&&state.subFilter==='todo')||(id==='subDoneBtn'&&state.subFilter==='done')
+    el.className = want ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-white text-zinc-900' : 'px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/10'
+  }
 }
 function updateSubProgressMini(){ updateProgressUI() }
 function updateLastUpdated(){
@@ -154,22 +362,15 @@ function updateLastUpdated(){
 }
 
 function resetProgress(){
-  document.querySelectorAll('#submissionBody input[type="checkbox"]').forEach(cb=>{
-    const tr=cb.closest('tr')
-    const rowIdx=[...tr.parentNode.children].indexOf(tr) // not reliable, use key re-eval: just clear storage keys for this version/course
-    // simpler: uncheck and clear localStorage for this view by brute force: clear all exam_sub_progress_ keys for current ver+course
-  })
-  // brute clear for current ver/course
   const prefix=`exam_sub_progress_${state.config?.version}_${state.course}`
   for(let i=localStorage.length-1;i>=0;i--){
     const k=localStorage.key(i)
     if(k && k.startsWith(prefix)) localStorage.removeItem(k)
   }
-  // also clear any matching view
   document.querySelectorAll('#submissionBody input[type="checkbox"]').forEach(cb=>{
     cb.checked=false; cb.closest('tr')?.classList.remove('row-completed')
   })
-  updateProgressUI(); toast('進捗をリセットしました')
+  updateProgressUI(); renderSubmissions(); toast('進捗をリセットしました')
 }
 
 // ---------- Countdown ----------
@@ -240,8 +441,10 @@ function tick(){
     if(timer.mode==='focus'){
       saveStudyTime(timer.subject, FOCUS_SEC); updateTimerStats()
       timer.mode='break'; timer.left=BREAK_SEC; $('#timerModeLabel').textContent='☕ 休憩'; toast(`お疲れ様！${Math.round(BREAK_SEC/60)}分休憩`)
+      try{ new Notification('集中完了', { body: `${timer.subject} ${Math.round(FOCUS_SEC/60)}分お疲れ様！` }) }catch{}
     } else {
       timer.mode='focus'; timer.left=FOCUS_SEC; $('#timerModeLabel').textContent='📚 集中'; toast('休憩終了！集中しましょう')
+      try{ new Notification('休憩終了', { body: '集中再開！' }) }catch{}
     }
     updateTimerDisplay(); updateTimerRing(); pauseTimer()
   }
@@ -254,7 +457,6 @@ function updateTimerRing(){
   const total=timer.mode==='focus'?FOCUS_SEC:BREAK_SEC
   const offset=CIRCUMFERENCE*(1 - timer.left/total)
   const c=$('#timerProgressCircle'); if(c) c.setAttribute('stroke-dashoffset', offset)
-  // color switch
   if(timer.mode==='break') c?.setAttribute('stroke','#ec4899')
   else c?.setAttribute('stroke','url(#grad)')
 }
@@ -320,7 +522,6 @@ function addDays(s,n){
 // ---------- Menu ----------
 function initMenu(){
   const btn=$('#menuBtn'), overlay=$('#menuOverlay'), dropdown=$('#menuDropdown')
-  const toggle=()=>{ const open=dropdown.classList.toggle('hidden'); overlay.classList.toggle('hidden', open); }
   const close=()=>{ dropdown.classList.add('hidden'); overlay.classList.add('hidden') }
   btn?.addEventListener('click', e=>{ e.stopPropagation(); dropdown.classList.contains('hidden') ? (dropdown.classList.remove('hidden'), overlay.classList.remove('hidden')) : close() })
   overlay?.addEventListener('click', close)
@@ -335,21 +536,65 @@ function initMenu(){
     else if(a==='scrollTo'){ close(); const t=document.getElementById(item.dataset.target); t?.scrollIntoView({behavior:'smooth',block:'start'}) }
   })
 }
-
-// ---------- Dark (keep subtle) ----------
 function initDark(){
-  // 画面は常にダーククール。ボタンはトーストのみ
   $('#darkModeBtn')?.addEventListener('click', ()=> toast('ダーククールテーマで固定表示しています'))
+}
+
+function initFilters(){
+  const search=$('#searchInput'), sort=$('#sortSelect'), viewT=$('#viewTableBtn'), viewC=$('#viewCardBtn'), dens=$('#densityBtn'), todayBtn=$('#todayFilterBtn')
+  search?.addEventListener('input', e=>{ state.filterQuery=e.target.value.trim(); renderSchedule() })
+  sort?.addEventListener('change', e=>{ state.sortBy=e.target.value; renderSchedule() })
+  viewT?.addEventListener('click', ()=>{ state.viewMode='table'; localStorage.setItem('exam_view_mode','table'); renderSchedule() })
+  viewC?.addEventListener('click', ()=>{ state.viewMode='card'; localStorage.setItem('exam_view_mode','card'); renderSchedule() })
+  dens?.addEventListener('click', ()=>{
+    state.density = state.density==='compact' ? 'comfortable' : 'compact'
+    localStorage.setItem('exam_density', state.density)
+    renderSchedule()
+    toast(state.density==='compact'?'コンパクト表示':'ゆったり表示')
+  })
+  todayBtn?.addEventListener('click', ()=>{
+    state.todayOnly=!state.todayOnly
+    todayBtn.classList.toggle('bg-white', state.todayOnly)
+    todayBtn.classList.toggle('text-zinc-900', state.todayOnly)
+    todayBtn.classList.toggle('bg-white/10', !state.todayOnly)
+    renderSchedule()
+  })
+  // submission filters
+  $('#subAllBtn')?.addEventListener('click', ()=>{ state.subFilter='all'; renderSubmissions() })
+  $('#subTodoBtn')?.addEventListener('click', ()=>{ state.subFilter='todo'; renderSubmissions() })
+  $('#subDoneBtn')?.addEventListener('click', ()=>{ state.subFilter='done'; renderSubmissions() })
+  $('#subCheckAllBtn')?.addEventListener('click', ()=>{
+    state.submissions.forEach((r,i)=>{
+      const k=getProgressKey(state.config?.version, state.course, r.subject, r.notes, i)
+      localStorage.setItem(k,'true')
+    })
+    renderSubmissions(); updateProgressUI(); toast('すべて完了にしました')
+  })
+  $('#subUncheckAllBtn')?.addEventListener('click', ()=>{
+    state.submissions.forEach((r,i)=>{
+      const k=getProgressKey(state.config?.version, state.course, r.subject, r.notes, i)
+      localStorage.removeItem(k)
+    })
+    renderSubmissions(); updateProgressUI(); toast('すべて未完了に戻しました')
+  })
+  // keyboard shortcuts
+  document.addEventListener('keydown', e=>{
+    const tag=(document.activeElement?.tagName||'').toLowerCase()
+    const isInput=['input','textarea','select'].includes(tag)
+    if(e.key==='/' && !isInput){ e.preventDefault(); search?.focus() }
+    if(!isInput && e.key.toLowerCase()==='t'){ openTimerModal() }
+    if(!isInput && e.key.toLowerCase()==='c'){ showCourseModal() }
+    if(e.key==='Escape' && state.filterQuery){ state.filterQuery=''; if(search) search.value=''; renderSchedule() }
+  })
 }
 
 // ---------- Init ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
   initAuth(); bindAuthModals()
-  initMenu(); initDark()
+  initMenu(); initDark(); initFilters()
   $('#printBtn')?.addEventListener('click', ()=> window.print())
   $('#calendarExportBtn')?.addEventListener('click', exportCalendar)
   $('#resetProgressBtn')?.addEventListener('click', resetProgress)
-  // timer
   $('#timerToggleBtn')?.addEventListener('click', toggleTimer)
   $('#timerResetBtn')?.addEventListener('click', resetTimer)
   $('#timerCloseBtn')?.addEventListener('click', closeTimerModal)
@@ -360,15 +605,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   $('#timerFocusMin')?.addEventListener('change', applyTimerDuration)
   $('#timerBreakMin')?.addEventListener('change', applyTimerDuration)
   $('#timerModal')?.addEventListener('click', e=>{ if(e.target===$('#timerModal')) closeTimerModal() })
-  // course
   initCourse()
-  // auth ready then update admin link
   await authReady
   updateMenuCourseLabel()
-  // if course already selected but not loaded (initCourse loads), ensure load
-  if(state.course && state.schedule.length===0){
-    // already triggered
-  }
-  // timer initial display
   updateTimerDisplay(); updateTimerRing()
+  // request notification permission lazily
+  if('Notification' in window && Notification.permission==='default'){
+    $('#timerToggleBtn')?.addEventListener('click', ()=> Notification.requestPermission().catch(()=>{}), { once:true })
+  }
 })

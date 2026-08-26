@@ -142,3 +142,25 @@ body {
 /* hide scrollbar for tabs */
 .no-scrollbar::-webkit-scrollbar { display:none; }
 .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+
+/* Density */
+html[data-density="compact"] .schedule-table td { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+html[data-density="compact"] .schedule-table th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+/* Print */
+@media print {
+  .bg-mesh, .bg-grid, #menuDropdown, #menuOverlay, #filterBar, #timerModal, .modal-backdrop, .header-glass button, #accountContainer { display: none !important; }
+  .header-glass { position: static; backdrop-filter: none; background: white; color: black; border-bottom: 1px solid #ddd; }
+  body { background: white !important; color: #111 !important; }
+  .glass, .glass-strong, .glass-subtle { background: white !important; border: 1px solid #e5e7eb !important; box-shadow: none !important; backdrop-filter: none !important; }
+  .schedule-table th { position: static; background: #f3f4f6 !important; color: #374151 !important; }
+  .schedule-table td { border-bottom: 1px solid #e5e7eb !important; }
+  .progress-track, .toast { display: none !important; }
+  a { color: #2563eb !important; }
+  /* show url for print */
+  @page { margin: 12mm; }
+}
+
+/* Card view animation */
+#scheduleCards > div { animation: cardIn .22s ease; }
+@keyframes cardIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: none; } }

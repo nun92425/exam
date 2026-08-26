@@ -106,10 +106,30 @@
     <!-- Schedule -->
     <section id="scheduleCard" class="glass rounded-[24px] overflow-hidden">
       <div class="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-white/5">
-        <h2 class="font-extrabold flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-white">📖</span> テスト範囲</h2>
+        <h2 class="font-extrabold flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-white">📖</span> テスト範囲 <span id="scheduleCount" class="text-xs font-mono bg-white/10 border border-white/10 px-2 py-0.5 rounded-full">0件</span></h2>
         <div class="hidden sm:flex items-center gap-2 text-xs text-zinc-500">
           <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-glow"></span> コースで自動フィルタ</div>
       </div>
+      <!-- Filter bar -->
+      <div id="filterBar" class="px-3 sm:px-5 py-3 flex flex-wrap gap-2 items-center border-b border-white/5 bg-white/[0.02]">
+        <div class="relative flex-1 min-w-[180px] max-w-[360px]">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">⌕</span>
+          <input id="searchInput" placeholder="教科・範囲・備考で検索  (/ でフォーカス)" class="input !pl-8 !py-2 !text-xs">
+        </div>
+        <div id="subjectChips" class="flex gap-1.5 flex-wrap"></div>
+        <select id="sortSelect" class="input !w-auto !py-1.5 !text-xs !pr-7 !pl-2">
+          <option value="date">日程順</option>
+          <option value="subject">教科順</option>
+          <option value="period">時限順</option>
+        </select>
+        <div class="flex items-center gap-1 ml-auto">
+          <button id="viewTableBtn" class="px-2.5 py-1.5 rounded-full text-xs font-bold bg-white text-zinc-900">表</button>
+          <button id="viewCardBtn" class="px-2.5 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10">カード</button>
+          <button id="densityBtn" class="px-2.5 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10" title="表示密度切替">↕ ゆったり</button>
+          <button id="todayFilterBtn" class="px-2.5 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/10">今日以降のみ</button>
+        </div>
+      </div>
+      <div id="scheduleCards" class="hidden p-3 grid gap-2 sm:grid-cols-2"></div>
       <div class="overflow-x-auto">
         <table class="schedule-table" id="scheduleTable">
           <thead>
@@ -125,7 +145,7 @@
         </table>
       </div>
       <div id="emptyState" class="hidden p-10 text-center text-zinc-500">
-        <div class="text-3xl mb-2">📭</div><p class="text-sm">テスト範囲データがありません</p><p class="text-xs text-zinc-600 mt-1">コースを選択するか、管理者がデータを登録してください</p>
+        <div class="text-3xl mb-2">📭</div><p class="text-sm">条件に一致するデータがありません</p><p class="text-xs text-zinc-600 mt-1">検索やフィルタを変更してください</p>
       </div>
     </section>
 
@@ -135,9 +155,20 @@
         <h2 class="font-extrabold flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 grid place-items-center text-white">✓</span> 提出物</h2>
         <span class="text-xs font-mono bg-white/10 border border-white/10 px-2.5 py-1 rounded-full" id="subProgressBadge">0 / 0</span>
       </div>
+      <div class="px-3 sm:px-5 py-2.5 flex flex-wrap gap-2 items-center border-b border-white/5 bg-white/[0.02]">
+        <div class="flex gap-1.5">
+          <button id="subAllBtn" class="px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/10">すべて表示</button>
+          <button id="subTodoBtn" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 border border-amber-500/20 text-amber-200">未完了のみ</button>
+          <button id="subDoneBtn" class="px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/10">完了のみ</button>
+        </div>
+        <div class="flex gap-1.5 ml-auto">
+          <button id="subCheckAllBtn" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white">✓ 一括完了</button>
+          <button id="subUncheckAllBtn" class="px-2.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/10">↺ 解除</button>
+        </div>
+      </div>
       <div class="overflow-x-auto">
         <table class="schedule-table" id="submissionTable">
-          <thead><tr><th style="width:18%">教科</th><th>提出物詳細</th><th style="width:56px" class="text-center">✓</th></tr></thead>
+          <thead><tr><th style="width:18%">教科</th><th>提出物詳細</th><th style="width:36px" class="text-center">✓</th><th style="width:28px"></th></tr></thead>
           <tbody id="submissionBody"></tbody>
         </table>
       </div>
