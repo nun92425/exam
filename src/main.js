@@ -190,7 +190,7 @@ function renderSchedule(){
     const btn=document.getElementById(id)
     if(!btn) continue
     const active=mode===m
-    btn.className = active ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-white text-zinc-900 inline-flex items-center gap-1' : 'px-2.5 py-1 rounded-full text-xs font-bold bg-transparent text-zinc-400 hover:text-white inline-flex items-center gap-1'
+    btn.className = active ? 'px-2.5 py-1 rounded-full text-xs font-bold bg-white text-zinc-900 inline-flex items-center gap-1 dark:bg-white dark:text-zinc-900' : 'px-2.5 py-1 rounded-full text-xs font-bold bg-zinc-100 dark:bg-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white inline-flex items-center gap-1 border border-zinc-200 dark:border-transparent'
   }
   const dBtn=$('#densityBtn')
   if(dBtn) dBtn.innerHTML = state.density==='compact' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><path d="M12 3v14"/><path d="M8 10l4-4 4 4"/><path d="M8 14l-4 4 4 4"/></svg> コンパクト' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><path d="M12 3v14"/><path d="M8 10l4-4 4 4"/><path d="M8 14l-4 4 4 4"/></svg> ゆったり'
@@ -233,16 +233,16 @@ function renderSchedule(){
       if(date && date!==lastDate){
         lastDate=date
         const tr=document.createElement('tr')
-        tr.innerHTML=`<td colspan="5" class="date-group-header !py-2 !px-3 bg-gradient-to-r from-white/[0.07] to-transparent text-xs font-bold tracking-wide text-zinc-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
+        tr.innerHTML=`<td colspan="5" class="date-group-header !py-2 !px-3 bg-gradient-to-r from-zinc-100 to-transparent dark:from-white/[0.07] dark:to-transparent text-xs font-bold tracking-wide text-zinc-700 dark:text-zinc-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 inline"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> ${escHtml(date)} ${badge?`<span class="ml-2 inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</td>`
         tbody.appendChild(tr)
       }
       const tr=document.createElement('tr')
       tr.className = state.density==='compact' ? '[&>td]:!py-2 [&>td]:!text-xs' : ''
       tr.innerHTML=`
-        <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}; box-shadow:0 0 8px ${color}66"></span><span class="font-semibold text-zinc-100">${escHtml(row.subject)}</span>${hasMemo?'<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>':''}</div></td>
+        <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}; box-shadow:0 0 8px ${color}66"></span><span class="font-semibold text-zinc-900 dark:text-zinc-100">${escHtml(row.subject)}</span>${hasMemo?'<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>':''}</div></td>
         <td class="font-mono text-xs whitespace-nowrap"><span class="inline-flex items-center gap-1.5">${escHtml(date)} ${badge&&date===lastDate?'': badge?`<span class="px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</span></td>
         <td class="text-center"><span class="inline-flex px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold">${escHtml(row.period||'')}</span></td>
-        <td class="text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${escHtml(row.scope||'').replace(/\n/g,'<br>')}</td>
+        <td class="text-zinc-700 dark:text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${escHtml(row.scope||'').replace(/\n/g,'<br>')}</td>
         <td class="text-zinc-400 text-xs leading-relaxed"><div>${escHtml(row.notes||'').replace(/\n/g,'<br>')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${escHtml(memoVal)}</div>`:''}<button data-memo="${globalIdx}" class="mt-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">${hasMemo?'メモ編集':'＋メモ'}</button></td>`
       tbody.appendChild(tr)
       tr.querySelector(`[data-memo="${globalIdx}"]`)?.addEventListener('click', ()=>{
@@ -273,7 +273,7 @@ function renderSchedule(){
           <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10">${escHtml(date)} ${escHtml(row.period||'')}</span>
         </div>
         ${badge?`<div class="inline-flex self-start px-2 py-0.5 rounded-full text-[11px] font-black border ${badge.cls}">${badge.label} • ${escHtml(date)}</div>`:''}
-        <div class="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed bg-white/[0.03] border border-white/5 rounded-xl p-2.5">${escHtml(row.scope||'（範囲なし）').replace(/\n/g,'<br>')}</div>
+        <div class="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed bg-white/[0.03] border border-white/5 rounded-xl p-2.5">${escHtml(row.scope||'（範囲なし）').replace(/\n/g,'<br>')}</div>
         ${row.notes?`<div class="text-xs text-zinc-400">${escHtml(row.notes).replace(/\n/g,'<br>')}</div>`:''}
         ${hasMemo?`<div class="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${escHtml(memoVal)}</div>`:''}
         <button data-memo-card="${globalIdx}" class="self-start text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">メモ ${hasMemo?'編集':'追加'}</button>
@@ -382,7 +382,7 @@ function renderTimeline(rows){
           <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${color}"></span><span class="font-bold text-sm">${escHtml(r.subject)}</span><span class="text-xs px-1.5 py-0.5 rounded-full bg-white/10 border border-white/10">${escHtml(r.period||'')}</span></div>
           ${hasMemo?'<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>':''}
         </div>
-        <div class="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed">${escHtml(r.scope||'').replace(/\n/g,'<br>')}</div>
+        <div class="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">${escHtml(r.scope||'').replace(/\n/g,'<br>')}</div>
         ${r.notes?`<div class="text-xs text-zinc-500">${escHtml(r.notes).replace(/\n/g,'<br>')}</div>`:''}
       </div>`
     }
@@ -465,7 +465,7 @@ function renderSubmissions(){
     if(checked) tr.classList.add('row-completed')
     tr.innerHTML=`
       <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}"></span><span class="font-semibold">${escHtml(row.subject)}</span></div></td>
-      <td class="text-zinc-300 text-[13px] whitespace-pre-wrap leading-relaxed"><div>${escHtml(row.notes||'')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}</td>
+      <td class="text-zinc-700 dark:text-zinc-300 text-[13px] whitespace-pre-wrap leading-relaxed"><div>${escHtml(row.notes||'')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">📝 ${escHtml(memoVal)}</div>`:''}</td>
       <td class="text-center"><input type="checkbox" ${checked?'checked':''} class="w-5 h-5 accent-cyan-400 rounded cursor-pointer"></td>
       <td class="text-center"><button data-memo-sub="${origIdx}" class="w-6 h-6 grid place-items-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-[11px]">${hasMemo?'📝':'＋'}</button></td>`
     const cb=tr.querySelector('input')
@@ -874,7 +874,7 @@ function renderPie(){
     offset+=angle
   }
   svg+=`<circle cx="50" cy="50" r="28" fill="#0F162E" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><text x="50" y="52" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="800" fill="white">${total}m</text></svg>`
-  wrap.innerHTML= svg + `<div class="text-xs text-zinc-400 leading-relaxed">直近7日で<br><span class="text-white font-bold">${total}分</span> 学習</div>`
+  wrap.innerHTML= svg + `<div class="text-xs text-zinc-400 leading-relaxed">直近7日で<br><span class="text-zinc-900 dark:text-white font-bold">${total}分</span> 学習</div>`
   legend.innerHTML=[...map.entries()].map(([s,m],i)=>`<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white/5 border border-white/5 text-xs"><span class="w-2 h-2 rounded-full" style="background:${colors[i%colors.length]}"></span>${escHtml(s)} ${m}m</span>`).join('')
 }
 
@@ -1039,13 +1039,14 @@ function initFilters(){
     })
     renderSubmissions(); updateProgressUI(); toast('すべて未完了に戻しました')
   })
-  // keyboard shortcuts
+  // keyboard shortcuts (Ctrl/Cmd + C はコピーに使うため、修飾キーがある場合は無視)
   document.addEventListener('keydown', e=>{
+    if(e.ctrlKey || e.metaKey || e.altKey) return
     const tag=(document.activeElement?.tagName||'').toLowerCase()
     const isInput=['input','textarea','select'].includes(tag)
     if(e.key==='/' && !isInput){ e.preventDefault(); search?.focus() }
     if(!isInput && e.key.toLowerCase()==='t'){ openTimerModal() }
-    if(!isInput && e.key.toLowerCase()==='c'){ showCourseModal() }
+    // 'c' でコース変更は誤爆が多いため無効化（メニューから変更してください）
     if(e.key==='Escape' && state.filterQuery){ state.filterQuery=''; if(search) search.value=''; renderSchedule() }
   })
 }

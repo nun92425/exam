@@ -259,8 +259,13 @@ html[data-density="compact"] .schedule-table td { padding-top: 0.5rem; padding-b
 html[data-density="compact"] .schedule-table th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 
 /* ===== Light mode comprehensive fixes ===== */
-html:not(.dark) .text-zinc-400 { @apply text-zinc-500; }
+html:not(.dark) .text-zinc-100 { @apply text-zinc-900; }
+html:not(.dark) .text-zinc-200 { @apply text-zinc-800; }
+html:not(.dark) .text-zinc-300 { @apply text-zinc-700; }
+html:not(.dark) .text-zinc-400 { @apply text-zinc-600; }
 html:not(.dark) .text-zinc-500 { @apply text-zinc-600; }
+/* keep badges with colored bg white, but general text-white on light bg should be dark */
+html:not(.dark) .text-white:not(.badge):not([class*="bg-cyan"]):not([class*="bg-violet"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-gradient"]):not(.btn-primary *) { color: rgb(24 24 27) !important; }
 html:not(.dark) #filterBar { @apply bg-zinc-50/80 border-zinc-200/60; }
 html:not(.dark) #subjectChips button { @apply border-zinc-200; }
 html:not(.dark) #subjectChips button.bg-white\/10 { @apply bg-white border-zinc-200 text-zinc-700; }
