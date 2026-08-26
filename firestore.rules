@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // config: 全員読み取り、管理者のみ書き込み
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // versions: 全員読み取り、管理者のみ書き込み
+    match /versions/{versionId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // schedules / submissions: 全員読み取り、管理者のみ書き込み
+    match /schedules/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /submissions/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // suggestions: 全員読み取り、ログイン済みが作成、管理者が更新
+    match /suggestions/{docId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && request.resource.data.status == '承認待ち'
+        && request.resource.data.keys().hasAll(['type','version','course','subject','createdAt']);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // users: 本人のみ読み書き + 管理者は全員読み取り
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // user progress / timer logs は users サブコレクションでも可だが今回はローカル+usersドキュメントに保存するため不要
+  }
+}

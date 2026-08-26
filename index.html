@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テスト範囲表 — 2026</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/favicon.ico">
+  <meta name="theme-color" content="#070A14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen">
+  <div class="bg-mesh"></div>
+  <div class="bg-grid"></div>
+
+  <!-- Header -->
+  <header class="header-glass">
+    <div class="max-w-[980px] mx-auto px-4 h-[60px] flex items-center justify-between gap-3">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-white font-black text-sm shadow-glow">T</div>
+        <div class="leading-none">
+          <div class="font-extrabold tracking-tight text-[15px]">テスト範囲表</div>
+          <div class="text-[11px] tracking-widest font-semibold text-zinc-400 -mt-0.5">EXAM COVERAGE 2026</div>
+        </div>
+      </a>
+      <div class="flex items-center gap-1.5">
+        <div id="accountContainer" class="flex items-center gap-1.5"></div>
+        <button id="printBtn" aria-label="印刷" class="w-8 h-8 grid place-items-center rounded-full bg-white/[0.06] border border-white/10 hover:bg-white/10 transition">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+        </button>
+        <button id="darkModeBtn" aria-label="テーマ切替" class="w-8 h-8 grid place-items-center rounded-full bg-white/[0.06] border border-white/10 hover:bg-white/10 transition text-sm">◐</button>
+        <button id="menuBtn" aria-label="メニュー" class="w-9 h-9 grid place-items-center rounded-xl bg-white text-zinc-900 font-bold shadow-lg hover:brightness-95 transition">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Menu Drawer -->
+  <div id="menuOverlay" class="fixed inset-0 z-40 bg-[#030612]/60 backdrop-blur-sm hidden"></div>
+  <div id="menuDropdown" class="fixed top-[64px] right-3 z-50 w-[300px] rounded-[20px] glass-strong p-2 hidden">
+    <div id="menuCourseLabel" class="px-3 pt-2 pb-1 text-[11px] font-bold tracking-widest text-zinc-400">現在: --</div>
+    <div class="px-3 pb-2 text-xs text-zinc-500" id="menuVersionLabel">--</div>
+    <div class="h-px bg-white/10 mx-2 my-1"></div>
+    <div class="text-[10px] font-bold tracking-widest text-zinc-500 px-3 py-1.5">ナビゲーション</div>
+    <button class="menu-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-left" data-action="scrollTo" data-target="topSection"><span class="w-7 h-7 rounded-full bg-cyan-500/15 grid place-items-center text-xs">◈</span> トップ</button>
+    <button class="menu-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-left" data-action="openTimer"><span class="w-7 h-7 rounded-full bg-violet-500/15 grid place-items-center text-xs">⏱</span> タイマーを開く</button>
+    <button class="menu-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-left" data-action="scrollTo" data-target="scheduleCard"><span class="w-7 h-7 rounded-full bg-emerald-500/15 grid place-items-center text-xs">📅</span> テスト日程</button>
+    <div class="text-[10px] font-bold tracking-widest text-zinc-500 px-3 py-1.5 mt-1">設定</div>
+    <button class="menu-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-left" data-action="changeCourse"><span class="w-7 h-7 rounded-full bg-amber-500/15 grid place-items-center">↺</span> コース変更</button>
+    <button class="menu-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-left" data-action="toggleDarkMode"><span class="w-7 h-7 rounded-full bg-zinc-500/15 grid place-items-center">◐</span> テーマ切替</button>
+    <div class="h-px bg-white/10 mx-2 my-2"></div>
+    <button class="menu-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-left" data-action="exportCalendar"><span class="w-7 h-7 rounded-full bg-sky-500/15 grid place-items-center text-xs">⧉</span> カレンダーに追加 (.ics)</button>
+    <a href="suggest.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm"><span class="w-7 h-7 rounded-full bg-pink-500/15 grid place-items-center">💡</span> 変更点を提案</a>
+    <a href="admin.html" id="menuAdminLink" class="hidden items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-violet-500/15 text-sm text-violet-200"><span class="w-7 h-7 rounded-full bg-violet-500/20 grid place-items-center">⚙️</span> 管理者画面</a>
+  </div>
+
+  <!-- Main -->
+  <main class="max-w-[980px] mx-auto px-3 sm:px-4 py-5 sm:py-6 space-y-4" id="mainContent">
+
+    <!-- Top meta + countdown + progress bento -->
+    <section id="topSection" class="grid grid-cols-12 gap-3">
+      <!-- Version / Course -->
+      <div class="col-span-12 lg:col-span-8 glass rounded-[20px] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="courseBadge" class="badge bg-gradient-to-r from-cyan-500 to-violet-500 text-white shadow-glow">コース未選択</span>
+          <span id="versionBadge" class="badge bg-white/10 border border-white/10 text-zinc-200">--</span>
+          <span id="versionLabel" class="text-xs font-semibold tracking-wide text-zinc-400">2026年度</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-zinc-400">
+          <span class="hidden sm:inline">最終更新</span><span id="lastUpdated">--:--</span>
+          <button id="calendarExportBtn" class="btn-ghost !py-1.5 !px-3 !text-xs">📅 .ics</button>
+        </div>
+      </div>
+      <!-- Countdown -->
+      <div id="countdownCard" class="col-span-12 lg:col-span-4 glass rounded-[20px] p-4 sm:p-5 text-center relative overflow-hidden hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-violet-500/10 pointer-events-none"></div>
+        <div class="relative">
+          <div class="text-[10px] font-bold tracking-[0.2em] text-zinc-400">NEXT EXAM IN</div>
+          <div id="countdownNumber" class="text-4xl font-black tracking-tight leading-none mt-1 bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent">--</div>
+          <div class="text-xs font-bold tracking-widest text-zinc-300 mt-1">DAYS</div>
+          <div id="countdownSub" class="text-[11px] text-zinc-500 mt-1 truncate">テスト日程を読み込み中…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress -->
+    <section id="topProgressCard" class="glass rounded-[20px] p-4 flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2 text-sm font-bold"><span class="w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/20 grid place-items-center text-xs">✓</span> 提出物進捗</div>
+      <div class="text-sm font-mono font-bold"><span id="topProgressText">0 / 0</span></div>
+      <div class="flex-1 min-w-[120px] progress-track"><div id="topProgressBar" class="progress-fill" style="width:0%"></div></div>
+      <div class="text-[11px] text-zinc-500 hidden sm:block" id="subProgressMini">0 / 0</div>
+      <button id="resetProgressBtn" class="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-zinc-400">リセット</button>
+    </section>
+
+    <!-- Loading / Error -->
+    <div id="loading" class="glass rounded-[20px] p-10 grid place-items-center gap-3">
+      <div class="w-8 h-8 rounded-full border-2 border-white/15 border-t-cyan-400 animate-spin"></div>
+      <div class="text-sm text-zinc-400">読み込み中…</div>
+    </div>
+    <div id="errorBox" class="hidden glass rounded-[20px] p-4 flex items-center gap-3 border-red-500/20 bg-red-500/10">
+      <span>⚠️</span><span id="errorMessage" class="text-sm text-red-200"></span>
+    </div>
+
+    <!-- Schedule -->
+    <section id="scheduleCard" class="glass rounded-[24px] overflow-hidden">
+      <div class="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-white/5">
+        <h2 class="font-extrabold flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-white">📖</span> テスト範囲</h2>
+        <div class="hidden sm:flex items-center gap-2 text-xs text-zinc-500">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-glow"></span> コースで自動フィルタ</div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="schedule-table" id="scheduleTable">
+          <thead>
+            <tr>
+              <th style="width:18%">教科</th>
+              <th style="width:16%">日程</th>
+              <th style="width:10%">時限</th>
+              <th style="width:30%">範囲</th>
+              <th style="width:26%">備考</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="hidden p-10 text-center text-zinc-500">
+        <div class="text-3xl mb-2">📭</div><p class="text-sm">テスト範囲データがありません</p><p class="text-xs text-zinc-600 mt-1">コースを選択するか、管理者がデータを登録してください</p>
+      </div>
+    </section>
+
+    <!-- Submissions -->
+    <section id="submissionCard" class="glass rounded-[24px] overflow-hidden">
+      <div class="p-4 sm:p-5 flex items-center justify-between border-b border-white/5">
+        <h2 class="font-extrabold flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 grid place-items-center text-white">✓</span> 提出物</h2>
+        <span class="text-xs font-mono bg-white/10 border border-white/10 px-2.5 py-1 rounded-full" id="subProgressBadge">0 / 0</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="schedule-table" id="submissionTable">
+          <thead><tr><th style="width:18%">教科</th><th>提出物詳細</th><th style="width:56px" class="text-center">✓</th></tr></thead>
+          <tbody id="submissionBody"></tbody>
+        </table>
+      </div>
+      <div id="subEmptyState" class="hidden p-10 text-center text-zinc-500">
+        <div class="text-3xl mb-2">📭</div><p class="text-sm">提出物データがありません</p>
+      </div>
+    </section>
+
+    <footer class="text-center text-[11px] text-zinc-600 py-6 tracking-wide">© 2026 Exam Coverage — Dark Cool Edition • Firebase</footer>
+  </main>
+
+  <!-- Course Modal -->
+  <div id="courseModal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-[560px]">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 grid place-items-center text-white text-xl mx-auto shadow-glow">◈</div>
+        <h3 class="text-xl font-black mt-3">コースを選択</h3>
+        <p class="text-sm text-zinc-400 mt-1">表示内容がコースごとに切り替わります。いつでも右上メニューから変更できます。</p>
+      </div>
+      <div class="grid gap-2.5" id="courseGrid">
+        <button class="course-btn" data-course="K/文系"><div class="flex items-center justify-between"><span class="font-bold">K / 文系</span><span>📜</span></div><div class="text-xs text-zinc-400 mt-1">基本教科 + 歴史</div></button>
+        <button class="course-btn" data-course="K/理系（物理）"><div class="flex items-center justify-between"><span class="font-bold">K / 理系（物理）</span><span>⚛️</span></div><div class="text-xs text-zinc-400 mt-1">基本教科 + 地理 + 物理</div></button>
+        <button class="course-btn" data-course="K/理系（生物）"><div class="flex items-center justify-between"><span class="font-bold">K / 理系（生物）</span><span>🧬</span></div><div class="text-xs text-zinc-400 mt-1">基本教科 + 地理 + 生物</div></button>
+        <button class="course-btn" data-course="SS/理系（物理）"><div class="flex items-center justify-between"><span class="font-bold">SS / 理系（物理）</span><span>🚀</span></div><div class="text-xs text-zinc-400 mt-1">基本教科 + 地理 + 物理</div></button>
+        <button class="course-btn" data-course="SS/理系（生物）"><div class="flex items-center justify-between"><span class="font-bold">SS / 理系（生物）</span><span>🌿</span></div><div class="text-xs text-zinc-400 mt-1">基本教科 + 地理 + 生物</div></button>
+      </div>
+      <p class="text-[11px] text-zinc-500 text-center mt-4">選択はブラウザに保存され、次回も自動で適用されます。</p>
+    </div>
+  </div>
+
+  <!-- Timer Modal -->
+  <div id="timerModal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-[420px] p-5">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold flex items-center gap-2">⏱ 勉強タイマー</h3>
+        <div class="flex gap-1">
+          <button id="timerFullscreenBtn" class="w-8 h-8 grid place-items-center rounded-full bg-white/10 hover:bg-white/15">⛶</button>
+          <button id="timerCloseBtn" class="w-8 h-8 grid place-items-center rounded-full bg-white/10 hover:bg-white/15">✕</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <select id="timerSubject" class="input !w-auto flex-1 min-w-[140px]"><option value="">教科を選択</option></select>
+        <div class="flex items-center gap-1.5 glass-subtle rounded-xl px-2 py-1">
+          <span class="text-[11px] font-bold text-zinc-400">集中</span><input id="timerFocusMin" type="number" value="25" min="1" max="120" class="w-12 input !py-1.5 text-center">
+          <span class="text-xs text-zinc-500">分</span>
+          <span class="text-[11px] font-bold text-zinc-400 ml-1">休憩</span><input id="timerBreakMin" type="number" value="5" min="1" max="30" class="w-12 input !py-1.5 text-center">
+          <span class="text-xs text-zinc-500">分</span>
+        </div>
+      </div>
+      <div class="grid place-items-center py-6">
+        <div class="relative w-[180px] h-[180px]" id="timerRing">
+          <svg width="180" height="180" viewBox="0 0 180 180" class="-rotate-90">
+            <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+            <circle cx="90" cy="90" r="78" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+            <circle id="timerProgressCircle" cx="90" cy="90" r="78" fill="none" stroke="url(#grad)" stroke-width="8" stroke-linecap="round" stroke-dasharray="490.09" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear"/>
+          </svg>
+          <div class="absolute inset-0 grid place-items-center">
+            <div>
+              <div id="timerDisplay" class="text-4xl font-black tracking-widest font-mono text-center">25:00</div>
+              <div id="timerModeLabel" class="text-xs font-bold tracking-widest text-zinc-400 text-center mt-1">📚 集中</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center gap-2">
+        <button id="timerToggleBtn" class="btn-primary !px-8">▶ 開始</button>
+        <button id="timerResetBtn" class="btn-ghost">↺ リセット</button>
+      </div>
+      <div id="timerStats" class="mt-4 pt-4 border-t border-white/10">
+        <div class="text-xs font-bold tracking-wide text-zinc-400">今日の勉強時間</div>
+        <div class="text-xs text-zinc-500 mt-1">まだ記録がありません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modals -->
+  <div id="loginModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 class="text-lg font-black text-center">ログイン</h3>
+      <p class="text-sm text-zinc-400 text-center mt-1">アカウントにログインしてください</p>
+      <div id="loginError" class="hidden mt-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300"></div>
+      <div class="mt-4 space-y-3">
+        <input id="loginEmail" type="email" placeholder="example@mail.com" class="input" autocomplete="username">
+        <input id="loginPassword" type="password" placeholder="パスワード" class="input" autocomplete="current-password">
+        <label class="flex items-center gap-2 text-xs text-zinc-400"><input id="loginAuto" type="checkbox" class="accent-cyan-400"> 自動ログインする</label>
+        <button id="loginSubmitBtn" class="btn-primary w-full">ログイン</button>
+        <div class="text-center text-xs text-zinc-500"><a id="forgotPasswordLink" class="underline hover:text-zinc-300 cursor-pointer">パスワードをお忘れですか？</a></div>
+        <div class="text-center text-sm text-zinc-400">アカウントをお持ちでない方は <a id="loginToRegister" class="font-bold text-white hover:underline cursor-pointer">新規登録</a></div>
+      </div>
+    </div>
+  </div>
+  <div id="registerModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 class="text-lg font-black text-center">新規登録</h3>
+      <p class="text-sm text-zinc-400 text-center mt-1">アカウントを作成してください</p>
+      <div id="regError" class="hidden mt-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300"></div>
+      <div class="mt-4 space-y-3">
+        <input id="regDisplayName" type="text" placeholder="表示名" class="input" autocomplete="name">
+        <input id="regEmail" type="email" placeholder="example@mail.com" class="input" autocomplete="username">
+        <input id="regPassword" type="password" placeholder="8文字以上" class="input" autocomplete="new-password">
+        <p class="text-[11px] text-zinc-500">入力された情報は暗号化され、管理者が閲覧することはできません</p>
+        <button id="regSubmitBtn" class="btn-primary w-full">登録</button>
+        <div class="text-center text-sm text-zinc-400">すでにアカウントをお持ちの方は <a id="registerToLogin" class="font-bold text-white hover:underline cursor-pointer">ログイン</a></div>
+      </div>
+    </div>
+  </div>
+  <div id="forgotPasswordModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 class="text-lg font-black text-center">パスワードリセット</h3>
+      <p class="text-sm text-zinc-400 text-center mt-1">登録したメールアドレスを入力してください</p>
+      <div id="forgotError" class="hidden mt-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300"></div>
+      <div id="forgotSuccess" class="hidden mt-3 px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-sm text-emerald-200"></div>
+      <div class="mt-4 space-y-3">
+        <input id="forgotEmail" type="email" placeholder="example@mail.com" class="input">
+        <button id="forgotSubmitBtn" class="btn-primary w-full">リセットメールを送信</button>
+        <div class="text-center"><a id="forgotToLogin" class="text-sm text-zinc-400 hover:text-white cursor-pointer">ログインに戻る</a></div>
+      </div>
+    </div>
+  </div>
+  <div id="resetPasswordModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 class="text-lg font-black text-center">新しいパスワード</h3>
+      <div id="resetError" class="hidden mt-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300"></div>
+      <div id="resetSuccess" class="hidden mt-3 px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-sm text-emerald-200"></div>
+      <div class="mt-4 space-y-3">
+        <input id="resetPassword" type="password" placeholder="新しいパスワード（8文字以上）" class="input">
+        <input id="resetPasswordConfirm" type="password" placeholder="もう一度入力" class="input">
+        <button id="resetSubmitBtn" class="btn-primary w-full">パスワードを変更</button>
+        <div class="text-center"><a id="resetToLogin" class="text-sm text-zinc-400 hover:text-white cursor-pointer">ログインに戻る</a></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
