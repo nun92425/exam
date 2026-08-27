@@ -38,6 +38,8 @@ function renderVersionUI(){
     if(!s) continue
     const curVal=s.value
     s.innerHTML='<option value="">バージョンを選択</option>'
+    // ensure current version is in options even if not in versions collection
+    if(state.config?.version && !state.versions.includes(state.config.version)) state.versions.push(state.config.version)
     state.versions.forEach(v=>{
       const o=document.createElement('option'); o.value=v; o.textContent=v; s.appendChild(o)
     })
@@ -301,6 +303,10 @@ async function checkGate(){
 // ---------- Bind ----------
 document.addEventListener('DOMContentLoaded', async ()=>{
   initTheme(); initAuth(); bindAuthModals()
+  // checkGate on every auth change, not just once
+  const { onAuthStateChanged } = await import('firebase/auth')
+  const { auth } = await import('./firebase.js')
+  if(auth) onAuthStateChanged(auth, ()=> checkGate())
   await authReady
   checkGate()
   $('#gateLoginBtn')?.addEventListener('click', ()=> show($('#loginModal')))

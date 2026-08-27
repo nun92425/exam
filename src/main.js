@@ -1,11 +1,12 @@
 import './style.css'
 import { COURSES, STORAGE_KEYS, SUBJECT_COLORS, getSubjects } from './constants.js'
-import { $, show, hide, toast, escHtml, escAttr, parseScheduleDate, escapeICS, formatICSDate, getProgressKey } from './utils.js'
+import { $, show, hide, toast, escHtml, escAttr, parseScheduleDate, parseScheduleDateForFuture, escapeICS, formatICSDate, getProgressKey } from './utils.js'
 import { initAuth, bindAuthModals, getIsAdmin, authReady } from './auth.js'
 import { getConfig, getSchedules, getSubmissions } from './firestore.js'
 import { initTheme, toggleTheme } from './theme.js'
 import { initCoach } from './coach.js'
 
+let loadId = 0
 let state = {
   course: null, config: null, schedule: [], submissions: [], subjects: [],
   filterQuery: '',
@@ -21,6 +22,11 @@ let state = {
 const CIRCUMFERENCE = 2 * Math.PI * 78
 let FOCUS_SEC = 25*60, BREAK_SEC=5*60
 let timer = { mode:'focus', left:FOCUS_SEC, running:false, subject:'', interval:null }
+let checkUpcomingInterval = null
+function ensureCheckUpcomingInterval(){
+  if(checkUpcomingInterval) clearInterval(checkUpcomingInterval)
+  checkUpcomingInterval = setInterval(checkUpcoming, 60*60*1000)
+}
 
 function updateMenuCourseLabel(){
   const l=$('#menuCourseLabel')
@@ -63,16 +69,19 @@ function initCourse(){
 
 // ---------- Data ----------
 async function loadData(){
+  const myId = ++loadId
   const loading=$('#loading'), errorBox=$('#errorBox')
   show(loading); hide(errorBox); hide($('#emptyState')); hide($('#subEmptyState'))
   try{
     const config = await getConfig()
+    if(myId !== loadId) return
     state.config = config
     state.subjects = getSubjects(state.course, config.version)
     const [schedules, submissions] = await Promise.all([
       getSchedules(config.version, state.course),
       getSubmissions(config.version, state.course),
     ])
+    if(myId !== loadId) return
     // initial sort by date then period
     schedules.sort((a,b)=>{
       const da=a.date||'', db=b.date||''; if(da<db) return -1; if(da>db) return 1
@@ -100,7 +109,8 @@ function renderInfo(){
 function getMemoKey(row,i){
   const ver=state.config?.version||'v'
   const c=state.course||'c'
-  return `exam_memo_${ver}_${c}_${row.subject}_${row.date||''}_${row.period||''}_${i}`
+  const stableId=row.id || `${row.subject}_${row.date||''}_${row.period||''}`
+  return `exam_memo_${ver}_${c}_${stableId}_${i}`
 }
 function getDateBadge(dateStr){
   const d=parseScheduleDate(dateStr)
@@ -119,7 +129,7 @@ function filteredSchedules(){
   // today only
   if(state.todayOnly){
     const today=new Date(); today.setHours(0,0,0,0)
-    rows=rows.filter(r=>{ const d=parseScheduleDate(r.date); return d && d>=today })
+    rows=rows.filter(r=>{ const d=parseScheduleDateForFuture(r.date); return d && d>=today })
   }
   // subject filter
   if(state.filterSubject){
@@ -148,6 +158,7 @@ function filteredSchedules(){
   return rows
 }
 
+function highlightMatch(text, query){ if(!query) return escHtml(text); const re=new RegExp('('+query.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')+')','gi'); return escHtml(text).replace(re, '<mark class="bg-amber-200 dark:bg-amber-500/30 px-0.5 rounded">$1</mark>') }
 function updateScheduleCount(){
   const el=$('#scheduleCount')
   if(!el) return
@@ -242,7 +253,7 @@ function renderSchedule(){
         <td><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}; box-shadow:0 0 8px ${color}66"></span><span class="font-semibold text-zinc-900 dark:text-zinc-100">${escHtml(row.subject)}</span>${hasMemo?'<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>':''}</div></td>
         <td class="font-mono text-xs whitespace-nowrap"><span class="inline-flex items-center gap-1.5">${escHtml(date)} ${badge&&date===lastDate?'': badge?`<span class="px-1.5 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}">${badge.label}</span>`:''}</span></td>
         <td class="text-center"><span class="inline-flex px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-bold">${escHtml(row.period||'')}</span></td>
-        <td class="text-zinc-700 dark:text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${escHtml(row.scope||'').replace(/\n/g,'<br>')}</td>
+        <td class="text-zinc-700 dark:text-zinc-300 leading-relaxed text-[13px] whitespace-pre-wrap">${highlightMatch(row.scope||'', state.filterQuery).replace(/\n/g,'<br>')}</td>
         <td class="text-zinc-400 text-xs leading-relaxed"><div>${escHtml(row.notes||'').replace(/\n/g,'<br>')}</div>${hasMemo?`<div class="mt-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 inline"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> ${escHtml(memoVal)}</div>`:''}<button data-memo="${globalIdx}" class="mt-1 text-[11px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">${hasMemo?'メモ編集':'＋メモ'}</button></td>`
       tbody.appendChild(tr)
       tr.querySelector(`[data-memo="${globalIdx}"]`)?.addEventListener('click', ()=>{
@@ -300,8 +311,8 @@ function renderCalendar(rows){
   // Determine month to display
   if(!state.calendarDate){
     // try first upcoming date, else today
-    const first=rows.find(r=> parseScheduleDate(r.date))
-    const d=first? parseScheduleDate(first.date) : new Date()
+    const first=rows.find(r=> parseScheduleDateForFuture(r.date))
+    const d=first? parseScheduleDateForFuture(first.date) : new Date()
     state.calendarDate=new Date(d.getFullYear(), d.getMonth(), 1)
   }
   const year=state.calendarDate.getFullYear(), month=state.calendarDate.getMonth()
@@ -311,7 +322,7 @@ function renderCalendar(rows){
   // group rows by date (parsed)
   const byDate=new Map()
   for(const r of rows){
-    const d=parseScheduleDate(r.date)
+    const d=parseScheduleDateForFuture(r.date)
     if(!d) continue
     const key=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
     if(!byDate.has(key)) byDate.set(key, [])
@@ -398,7 +409,7 @@ function checkUpcoming(forceToast=false){
   const rows=filteredSchedules()
   const today=new Date(); today.setHours(0,0,0,0)
   for(const r of rows){
-    const d=parseScheduleDate(r.date)
+    const d=parseScheduleDateForFuture(r.date)
     if(!d) continue
     const diff=Math.ceil((d - today)/(1000*60*60*24))
     if(diff===1 || diff===0){
@@ -414,7 +425,7 @@ function checkUpcoming(forceToast=false){
     }
   }
   // also check submissions progress when test is near
-  const earliest=rows.map(r=> parseScheduleDate(r.date)).filter(Boolean).sort((a,b)=>a-b)[0]
+  const earliest=rows.map(r=> parseScheduleDateForFuture(r.date)).filter(Boolean).sort((a,b)=>a-b)[0]
   if(earliest){
     const diff=Math.ceil((earliest - today)/(1000*60*60*24))
     if(diff<=3 && diff>=0){
@@ -534,7 +545,7 @@ function renderCountdown(){
   const today=new Date(); today.setHours(0,0,0,0)
   let earliest=null, earliestRow=null
   for(const r of state.schedule){
-    const d=parseScheduleDate(r.date); if(!d) continue
+    const d=parseScheduleDateForFuture(r.date); if(!d) continue
     if(d>=today && (!earliest || d<earliest)){ earliest=d; earliestRow=r }
   }
   if(!earliest){ card.classList.add('hidden'); return }
@@ -585,12 +596,12 @@ function pauseTimer(){
 }
 function resetTimer(){
   pauseTimer(); timer.mode='focus'; timer.left=FOCUS_SEC
-  updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000)
+  updateTimerDisplay(); updateTimerRing(); checkUpcoming()
   $('#timerModeLabel').textContent='📚 集中'
 }
 function tick(){
   timer.left--
-  updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000)
+  updateTimerDisplay(); updateTimerRing(); checkUpcoming()
   if(timer.left<=0){
     if(timer.mode==='focus'){
       saveStudyTime(timer.subject, FOCUS_SEC); updateTimerStats()
@@ -600,7 +611,7 @@ function tick(){
       timer.mode='focus'; timer.left=FOCUS_SEC; $('#timerModeLabel').textContent='📚 集中'; toast('休憩終了！集中しましょう')
       try{ new Notification('休憩終了', { body: '集中再開！' }) }catch{}
     }
-    updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000); pauseTimer()
+    updateTimerDisplay(); updateTimerRing(); checkUpcoming(); pauseTimer()
   }
 }
 function updateTimerDisplay(){
@@ -696,7 +707,7 @@ function generatePlan(){
   const today=new Date(); today.setHours(0,0,0,0)
   const plan=[]
   for(const r of rows){
-    const d=parseScheduleDate(r.date)
+    const d=parseScheduleDateForFuture(r.date)
     if(!d) continue
     const diff=Math.ceil((d - today)/(1000*60*60*24))
     if(diff<=0) continue
@@ -885,7 +896,7 @@ function getShareText(){
   for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith(TIMER_PREFIX+today)) todayMin+= Math.round((parseInt(localStorage.getItem(k))||0)/60) }
   const done=state.submissions.filter((r,i)=> localStorage.getItem(getProgressKey(state.config?.version, state.course, r.subject, r.notes, i))==='true').length
   const total=state.submissions.length
-  const earliest=filteredSchedules().map(r=> parseScheduleDate(r.date)).filter(Boolean).sort((a,b)=>a-b)[0]
+  const earliest=filteredSchedules().map(r=> parseScheduleDateForFuture(r.date)).filter(Boolean).sort((a,b)=>a-b)[0]
   const diff= earliest ? Math.ceil((earliest - new Date(new Date().setHours(0,0,0,0)))/(1000*60*60*24)) : null
   const lines=[
     'テスト範囲表 進捗共有',
@@ -1002,7 +1013,8 @@ function setViewMode(mode){
 }
 function initFilters(){
   const search=$('#searchInput'), sort=$('#sortSelect'), viewT=$('#viewTableBtn'), viewC=$('#viewCardBtn'), viewCal=$('#viewCalendarBtn'), viewTl=$('#viewTimelineBtn'), dens=$('#densityBtn'), todayBtn=$('#todayFilterBtn'), notifyBtn=$('#notifyBtn')
-  search?.addEventListener('input', e=>{ state.filterQuery=e.target.value.trim(); renderSchedule() })
+  let searchDebounce=null
+  search?.addEventListener('input', e=>{ clearTimeout(searchDebounce); searchDebounce=setTimeout(()=>{ state.filterQuery=e.target.value.trim(); renderSchedule() }, 200) })
   sort?.addEventListener('change', e=>{ state.sortBy=e.target.value; renderSchedule() })
   viewT?.addEventListener('click', ()=> setViewMode('table'))
   viewC?.addEventListener('click', ()=> setViewMode('card'))
@@ -1039,6 +1051,17 @@ function initFilters(){
     })
     renderSubmissions(); updateProgressUI(); toast('すべて未完了に戻しました')
   })
+  // empty state & error retry
+  document.getElementById('emptyClearBtn')?.addEventListener('click', ()=>{ state.filterQuery=''; const inp=document.getElementById('searchInput'); if(inp) inp.value=''; state.filterSubject=''; state.todayOnly=false; renderSubjectChips(); renderSchedule() })
+  document.getElementById('emptyCourseBtn')?.addEventListener('click', ()=> showCourseModal())
+  document.getElementById('errorRetryBtn')?.addEventListener('click', ()=> loadData())
+  // help modal
+  const helpModal=document.getElementById('helpModal')
+  document.getElementById('helpCloseBtn')?.addEventListener('click', ()=> helpModal?.classList.add('hidden'))
+  helpModal?.addEventListener('click', e=>{ if(e.target===helpModal) helpModal.classList.add('hidden') })
+  // offline banner
+  window.addEventListener('offline', ()=> toast('オフラインです。変更は接続後に反映されます'))
+  window.addEventListener('online', ()=> toast('オンラインに復帰しました'))
   // keyboard shortcuts (Ctrl/Cmd + C はコピーに使うため、修飾キーがある場合は無視)
   document.addEventListener('keydown', e=>{
     if(e.ctrlKey || e.metaKey || e.altKey) return
@@ -1046,7 +1069,9 @@ function initFilters(){
     const isInput=['input','textarea','select'].includes(tag)
     if(e.key==='/' && !isInput){ e.preventDefault(); search?.focus() }
     if(!isInput && e.key.toLowerCase()==='t'){ openTimerModal() }
+    if(!isInput && e.key==='?'){ const hm=document.getElementById('helpModal'); if(hm) hm.classList.remove('hidden') }
     // 'c' でコース変更は誤爆が多いため無効化（メニューから変更してください）
+    if(e.key==='?' && !isInput){ e.preventDefault(); const hm=document.getElementById('helpModal'); if(hm) hm.classList.remove('hidden') }
     if(e.key==='Escape' && state.filterQuery){ state.filterQuery=''; if(search) search.value=''; renderSchedule() }
   })
 }
@@ -1071,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   initCourse()
   await authReady
   updateMenuCourseLabel()
-  updateTimerDisplay(); updateTimerRing(); checkUpcoming(); setInterval(checkUpcoming, 60*60*1000)
+  updateTimerDisplay(); updateTimerRing(); checkUpcoming()
   // request notification permission lazily
   if('Notification' in window && Notification.permission==='default'){
     $('#timerToggleBtn')?.addEventListener('click', ()=> Notification.requestPermission().catch(()=>{}), { once:true })

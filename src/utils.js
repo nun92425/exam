@@ -29,10 +29,23 @@ export function formatICSDate(d){
 export function parseScheduleDate(str){
   const m = String(str||'').match(/(\d{1,2})\/(\d{1,2})/)
   if(!m) return null
-  const now=new Date(); now.setHours(0,0,0,0)
-  const d=new Date(now.getFullYear(), parseInt(m[1])-1, parseInt(m[2]))
+  const d=new Date()
+  d.setMonth(parseInt(m[1])-1, parseInt(m[2]))
   d.setHours(0,0,0,0)
-  if(d < now) d.setFullYear(d.getFullYear()+1)
+  return d
+}
+export function parseScheduleDateForFuture(str){
+  const d=parseScheduleDate(str)
+  if(!d) return null
+  const now=new Date(); now.setHours(0,0,0,0)
+  if(d < now){
+    const next=new Date(d)
+    next.setFullYear(next.getFullYear()+1)
+    // Only roll over if the next year date is within 6 months (to handle Dec->Jan case)
+    // Otherwise keep as past
+    const diffMonths=(next.getFullYear()-now.getFullYear())*12 + (next.getMonth()-now.getMonth())
+    if(diffMonths <= 6) return next
+  }
   return d
 }
 export function escapeICS(s){
