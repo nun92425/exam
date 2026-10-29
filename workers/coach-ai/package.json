@@ -1,0 +1,17 @@
+{
+  "name": "exam-coach-ai-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.154.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

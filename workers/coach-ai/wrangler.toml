@@ -1,0 +1,22 @@
+name = "exam-coach-ai"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Workers AI のバインディング。APIキーは不要。
+[ai]
+binding = "AI"
+
+[vars]
+# 日本語の自由質問用。必要なら別モデルに変更できます。
+# 例: "@cf/qwen/qwen3-30b-a3b-fp8" / "@cf/google/gemma-4-26b-a4b-it"
+AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
+PER_USER_DAILY_LIMIT = "20"
+DAILY_REQUEST_LIMIT = "400"
+
+# 回数制限を日付をまたいで保持したい場合（推奨）
+#   cd workers/coach-ai
+#   npx wrangler kv namespace create COACH_KV
+# で作成し、表示された id を貼り付けてコメントを外してください。
+# [[kv_namespaces]]
+# binding = "COACH_KV"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

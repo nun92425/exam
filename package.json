@@ -1,13 +1,15 @@
 {
   "name": "exam",
   "version": "2.0.0",
-  "description": "高校テスト範囲表 - Firebase版 (ダーククールデザイン)",
+  "description": "高校テスト範囲表 + 完全無料のAI学習コーチ (Firebase版)",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "worker:dev": "npm --prefix workers/coach-ai run dev",
+    "worker:deploy": "npm --prefix workers/coach-ai run deploy"
   },
   "repository": {
     "type": "git",

@@ -341,23 +341,32 @@
       <div class="p-5 border-b border-zinc-200 dark:border-white/10 flex items-center justify-between">
         <div>
           <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M12 2a7 7 0 0 0-4 12.7V16a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-1.3A7 7 0 0 0 12 2z"/><path d="M9 18h6"/><path d="M10 22h4"/></svg> 学習コーチAI</h3>
-          <p class="text-xs text-zinc-500 mt-1">宿題のヒントや学習計画を相談できます</p>
+          <p class="text-xs text-zinc-500 mt-1">計画・提出物・勉強法を、無料のAIコーチに相談</p>
         </div>
         <button id="coachCloseBtn" class="w-8 h-8 grid place-items-center rounded-full bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/15"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-200">
-        個人情報（氏名・学籍番号・住所・電話）は入力しないでください。本チャットでの情報流出について制作者は責任を負いません。
+        個人情報（氏名・学籍番号・住所・電話）は入力しないでください。簡易コーチと端末AIは入力を外部に送信しません（クラウドAIを有効にした場合のみ送信）。
       </div>
-      <div class="px-3 py-1.5 bg-zinc-50 dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/5 flex items-center justify-between">
-        <span id="coachContextBadge" class="text-xs text-zinc-600 dark:text-zinc-400">コース未選択</span>
-        <button id="coachClearBtn" class="text-xs px-2 py-1 rounded-full bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/15">履歴クリア</button>
+      <div class="px-3 py-1.5 bg-zinc-50 dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/5 flex items-center justify-between gap-2">
+        <span id="coachContextBadge" class="text-xs text-zinc-600 dark:text-zinc-400 truncate">コース未選択</span>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button id="coachAiBtn" class="hidden text-xs px-2.5 py-1 rounded-full font-bold border bg-cyan-500/15 border-cyan-500/25 text-cyan-700 dark:text-cyan-200">端末AIを使う（無料）</button>
+          <button id="coachClearBtn" class="text-xs px-2 py-1 rounded-full bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/15">履歴クリア</button>
+        </div>
+      </div>
+      <div id="coachQuickActions" class="px-3 py-2 bg-zinc-50 dark:bg-white/[0.03] border-b border-zinc-200 dark:border-white/5 flex gap-1.5 overflow-x-auto no-scrollbar">
+        <button data-coach-prompt="今日の計画を立てたい" class="shrink-0 text-[11px] px-2.5 py-1 rounded-full font-bold bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/15">今日の計画</button>
+        <button data-coach-prompt="未完了の提出物を確認したい" class="shrink-0 text-[11px] px-2.5 py-1 rounded-full font-bold bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/15">提出物</button>
+        <button data-coach-prompt="数学の勉強法を教えて" class="shrink-0 text-[11px] px-2.5 py-1 rounded-full font-bold bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/15">勉強法</button>
+        <button data-coach-prompt="やる気が出ない" class="shrink-0 text-[11px] px-2.5 py-1 rounded-full font-bold bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/15">やる気</button>
       </div>
       <div id="coachChatContainer" class="flex-1 overflow-auto p-4 space-y-3 bg-zinc-50/50 dark:bg-transparent" style="min-height: 200px; max-height: 50vh;"></div>
       <div class="p-3 border-t border-zinc-200 dark:border-white/10 bg-white dark:bg-[#0F162E] flex gap-2">
         <textarea id="coachInput" rows="2" placeholder="例: 数学の二次関数が分からない / 来週まで歴史を1日1時間で終わらせたい" class="input flex-1 !py-2 text-sm resize-none"></textarea>
         <button id="coachSendBtn" class="btn-primary !px-5 self-end">送信</button>
       </div>
-      <div class="px-3 pb-3 text-[11px] text-zinc-500 text-center">Gemini 1.5 Flash（無料枠）を使用。混雑時は30秒後に再試行します。</div>
+      <div id="coachModeNote" class="px-3 pb-3 text-[11px] text-zinc-500 text-center">簡易コーチ（無料・端末内）で動作中。入力は外部に送信されません。</div>
     </div>
   </div>
 
