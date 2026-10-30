@@ -13,10 +13,7 @@ AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
 PER_USER_DAILY_LIMIT = "20"
 DAILY_REQUEST_LIMIT = "400"
 
-# 回数制限を日付をまたいで保持したい場合（推奨）
-#   cd workers/coach-ai
-#   npx wrangler kv namespace create COACH_KV
-# で作成し、表示された id を貼り付けてコメントを外してください。
-# [[kv_namespaces]]
-# binding = "COACH_KV"
-# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# 回数制限を日付をまたいで保持するためのKV。
+[[kv_namespaces]]
+binding = "COACH_KV"
+id = "8f9cc6535af1436380414d6a424ffb28"
