@@ -123,6 +123,16 @@ function nextTest(rows) {
   }
 }
 
+// 「範囲表が無い」と「今日以降の日程が無い」を区別する。
+// 過去のテストだけが登録されている場合に、読み込み失敗と誤解されないようにする。
+function noUpcomingTestsMessage(context = {}) {
+  const schedule = Array.isArray(context.schedule) ? context.schedule : []
+  if (!schedule.length) {
+    return 'このコースの範囲表がまだありません。右上のメニューからコースを選び直してください。'
+  }
+  return '今日以降のテスト日程が登録されていません。テスト日程が更新されると、合わせて提案できます。'
+}
+
 export function findSubjectsInMessage(message, available = []) {
   const text = String(message || '')
   const pool = unique(available)
@@ -191,7 +201,7 @@ function taskForRow(row, days) {
 function planReply(message, context) {
   const rows = upcomingRows(context)
   if (!rows.length) {
-    return '今後のテスト日程が範囲表に見つかりません。コースとテストのバージョンが合っているか確認してください。'
+    return noUpcomingTestsMessage(context)
   }
 
   const budget = getTimeBudget(message)
@@ -276,7 +286,7 @@ function progressReply(context) {
 
 function testInfoReply(context) {
   const rows = upcomingRows(context)
-  if (!rows.length) return '今後のテスト日程が範囲表に見つかりません。コースとテストのバージョンを確認してください。'
+  if (!rows.length) return noUpcomingTestsMessage(context)
 
   const byDate = new Map()
   for (const r of rows) {
@@ -344,7 +354,7 @@ function greetingReply(context) {
   if (next) {
     lines.push(`次のテストは ${next.date} の ${next.subjects.slice(0, 2).join('・')}（${dayLabel(next.daysUntil)}）。`)
   } else {
-    lines.push('範囲表がまだ読み込まれていないようです。コースを選ぶと、テスト日程に合わせて提案できます。')
+    lines.push(noUpcomingTestsMessage(context))
   }
   if (pending.length) lines.push(`未完了の提出物が${pending.length}件あります。`)
   lines.push('「今日の計画」「提出物を確認」「数学の勉強法」など、短く話しかけてください。')
