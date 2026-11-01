@@ -51,44 +51,40 @@
 
       <!-- Schedule editor -->
       <section class="glass rounded-[24px] p-5">
-        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> 時間割・範囲エディタ</h3>
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> 範囲表エディタ（教科ごと）</h3>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/20 text-cyan-200 font-bold">1教科＝1行</span>
+        </div>
+        <p class="text-xs text-zinc-500 mt-1 leading-relaxed">同じ教科は「共有先」のコースにまとめて反映されます。コースごとに範囲が違う場合だけ「例外を追加」してください。</p>
         <div class="flex flex-wrap gap-2 mt-3">
-          <select id="editVersionSelect" class="input !w-auto min-w-[180px]"><option value="">バージョンを選択</option></select>
-          <select id="editCourseSelect" class="input !w-auto min-w-[180px]">
-            <option value="共通">共通（選択科目用）</option>
-            <option value="K/文系">K/文系</option>
-            <option value="K/理系（物理）">K/理系（物理）</option>
-            <option value="K/理系（生物）">K/理系（生物）</option>
-            <option value="SS/理系（物理）">SS/理系（物理）</option>
-            <option value="SS/理系（生物）">SS/理系（生物）</option>
-          </select>
-          <button id="loadScheduleBtn" class="btn-ghost">読み込む</button>
+          <select id="editVersionSelect" class="input !w-auto min-w-[200px]"><option value="">バージョンを選択</option></select>
+          <button id="loadScheduleBtn" class="btn-ghost">再読み込み</button>
+          <button id="generateScheduleTemplateBtn" class="btn-ghost">教科の雛形を追加</button>
           <button id="addEntryBtn" class="btn-ghost inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M12 5v14M5 12h14"/></svg> 行を追加</button>
+          <select id="schedulePreviewCourse" class="input !w-auto min-w-[170px]"><option value="">表示プレビュー</option></select>
           <button id="saveScheduleBtn" class="btn-primary ml-auto inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg> 保存</button>
         </div>
         <div id="scheduleEditor" class="mt-4 overflow-x-auto rounded-xl border border-white/5">
-          <div class="p-6 text-center text-sm text-zinc-500">バージョンとコースを選択して「読み込む」を押してください</div>
+          <div class="p-6 text-center text-sm text-zinc-500">バージョンを選ぶと教科一覧が表示されます</div>
         </div>
+        <div id="schedulePreview" class="hidden mt-4"></div>
       </section>
 
       <!-- Submissions editor -->
       <section class="glass rounded-[24px] p-5">
-        <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h3"/></svg> 提出物エディタ</h3>
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-extrabold flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M10 13H8"/><path d="M16 17H8"/><path d="M13 13h3"/></svg> 提出物エディタ（教科ごと）</h3>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/20 text-violet-200 font-bold">1教科＝1行</span>
+        </div>
+        <p class="text-xs text-zinc-500 mt-1 leading-relaxed">範囲表と同じ共有先で反映されます。コースごとに提出物が違う場合だけ「例外を追加」してください。</p>
         <div class="flex flex-wrap gap-2 mt-3">
-          <select id="subVersionSelect" class="input !w-auto min-w-[180px]"><option value="">バージョン</option></select>
-          <select id="subCourseSelect" class="input !w-auto min-w-[180px]">
-            <option value="K/文系">K/文系</option>
-            <option value="K/理系（物理）">K/理系（物理）</option>
-            <option value="K/理系（生物）">K/理系（生物）</option>
-            <option value="SS/理系（物理）">SS/理系（物理）</option>
-            <option value="SS/理系（生物）">SS/理系（生物）</option>
-          </select>
-          <button id="loadSubBtn" class="btn-ghost">読み込む</button>
+          <select id="subVersionSelect" class="input !w-auto min-w-[200px]"><option value="">バージョンを選択</option></select>
+          <button id="loadSubBtn" class="btn-ghost">再読み込み</button>
           <button id="addSubEntryBtn" class="btn-ghost inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M12 5v14M5 12h14"/></svg> 行を追加</button>
           <button id="saveSubBtn" class="btn-primary ml-auto inline-flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg> 保存</button>
         </div>
         <div id="submissionEditor" class="mt-4 overflow-x-auto rounded-xl border border-white/5">
-          <div class="p-6 text-center text-sm text-zinc-500">「読み込み」でデータを取得してください</div>
+          <div class="p-6 text-center text-sm text-zinc-500">バージョンを選ぶと教科一覧が表示されます</div>
         </div>
       </section>
 
@@ -108,6 +104,39 @@
       </section>
     </div>
   </main>
+
+  <datalist id="subjectOptions"></datalist>
+
+  <!-- Share / Exception Modals -->
+  <div id="shareModal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-[560px]">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-black">共有先を選ぶ</h3>
+          <p id="shareModalHint" class="text-xs text-zinc-400 mt-1">選んだコースに同じ範囲が表示されます。</p>
+        </div>
+        <span id="shareModalSubject" class="text-[11px] px-2 py-1 rounded-full bg-white/10 border border-white/10 font-bold"></span>
+      </div>
+      <div id="sharePresetList" class="flex flex-wrap gap-1.5 mt-4"></div>
+      <div id="shareCourseList" class="mt-3 grid gap-1.5"></div>
+      <div class="flex gap-2 mt-5">
+        <button id="shareCancelBtn" class="btn-ghost flex-1">キャンセル</button>
+        <button id="shareApplyBtn" class="btn-primary flex-1">この共有先にする</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exceptionModal" class="modal-backdrop hidden">
+    <div class="modal-card max-w-[520px]">
+      <h3 class="text-lg font-black">例外にするコース</h3>
+      <p id="exceptionHint" class="text-xs text-zinc-400 mt-1">選んだコースだけ別データになります。元の行には残りのコースが残ります。</p>
+      <div id="exceptionCourseList" class="mt-4 grid gap-1.5"></div>
+      <div class="flex gap-2 mt-5">
+        <button id="exceptionCancelBtn" class="btn-ghost flex-1">キャンセル</button>
+        <button id="exceptionApplyBtn" class="btn-primary flex-1">このコースだけ別にする</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Auth Modals -->
   <div id="loginModal" class="modal-backdrop hidden"><div class="modal-card"><h3 class="text-lg font-black text-center">ログイン</h3><div id="loginError" class="hidden mt-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/20 text-sm text-red-300"></div><div class="mt-4 space-y-3"><input id="loginEmail" type="email" placeholder="example@mail.com" class="input"><input id="loginPassword" type="password" placeholder="パスワード" class="input"><button id="loginSubmitBtn" class="btn-primary w-full">ログイン</button><div class="text-center text-sm text-zinc-400">アカウントをお持ちでない方は <a id="loginToRegister" class="font-bold text-white hover:underline cursor-pointer">新規登録</a></div></div></div></div>

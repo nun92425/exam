@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
 import { db, isConfigured } from './firebase.js'
+import { normalizeScheduleRow, rowAppliesTo } from './scheduleModel.js'
 
 // --- Mock fallback (Firebase未設定時のデモデータ) ---
 const MOCK = {
@@ -43,33 +44,62 @@ export async function getVersions(){
 
 export async function getSchedules(version, course){
   if(!isConfigured){
-    return MOCK.schedules.filter(r=>{
-      if(version && r.version!==version) return false
-      if(course && r.course!==course && r.course!=='共通') return false
-      return true
-    })
+    return MOCK.schedules
+      .filter(r => r.version === version)
+      .map(normalizeScheduleRow)
+      .filter(r => !course || rowAppliesTo(r, course))
   }
   try{
-    // フィルタはクライアント側で（index不要＆コース共通を簡単にする）
+    // フィルタはクライアント側で（index不要＆コース共有を簡単にする）
     const qy = query(collection(db,'schedules'), where('version','==', version))
     const snap = await getDocs(qy)
-    const rows = snap.docs.map(d=> ({ id:d.id, ...d.data() }))
-    return rows.filter(r=> r.course===course || r.course==='共通')
+    const rows = snap.docs.map(d=> ({ id:d.id, ...d.data() })).map(normalizeScheduleRow)
+    return rows.filter(r => !course || rowAppliesTo(r, course))
   } catch(e){
     console.warn('getSchedules', e); return []
   }
 }
 
-export async function getSubmissions(version, course){
+export async function getSchedulesForVersion(version){
   if(!isConfigured){
-    return MOCK.submissions.filter(r=> r.version===version && r.course===course)
+    return MOCK.schedules.filter(r => r.version === version).map(normalizeScheduleRow)
   }
   try{
-    const qy = query(collection(db,'submissions'), where('version','==', version), where('course','==', course))
+    const qy = query(collection(db,'schedules'), where('version','==', version))
     const snap = await getDocs(qy)
-    return snap.docs.map(d=> ({ id:d.id, ...d.data() }))
+    return snap.docs.map(d=> ({ id:d.id, ...d.data() })).map(normalizeScheduleRow)
+  } catch(e){
+    console.warn('getSchedulesForVersion', e); return []
+  }
+}
+
+export async function getSubmissions(version, course){
+  if(!isConfigured){
+    return MOCK.submissions
+      .filter(r => r.version === version)
+      .map(normalizeScheduleRow)
+      .filter(r => !course || rowAppliesTo(r, course))
+  }
+  try{
+    const qy = query(collection(db,'submissions'), where('version','==', version))
+    const snap = await getDocs(qy)
+    const rows = snap.docs.map(d=> ({ id:d.id, ...d.data() })).map(normalizeScheduleRow)
+    return rows.filter(r => !course || rowAppliesTo(r, course))
   } catch(e){
     console.warn('getSubmissions', e); return []
+  }
+}
+
+export async function getSubmissionsForVersion(version){
+  if(!isConfigured){
+    return MOCK.submissions.filter(r => r.version === version).map(normalizeScheduleRow)
+  }
+  try{
+    const qy = query(collection(db,'submissions'), where('version','==', version))
+    const snap = await getDocs(qy)
+    return snap.docs.map(d=> ({ id:d.id, ...d.data() })).map(normalizeScheduleRow)
+  } catch(e){
+    console.warn('getSubmissionsForVersion', e); return []
   }
 }
 

@@ -23,7 +23,7 @@ export const SUBJECT_COLORS = {
 }
 
 export function getSubjects(course, version) {
-  const isFinal = version && version.includes('期末')
+  const isFinal = version && (String(version).includes('期末') || String(version).includes('学年末'))
   const basic = isFinal ? BASIC_SUBJECTS.final : BASIC_SUBJECTS.mid
   let elective = []
   if (course === 'K/文系') elective = ['歴史']
